@@ -43,6 +43,11 @@ export type Gallery = Prisma.GalleryModel
  */
 export type SiteSetting = Prisma.SiteSettingModel
 /**
+ * Model ContactMessage
+ * 
+ */
+export type ContactMessage = Prisma.ContactMessageModel
+/**
  * Model Agenda
  * 
  */

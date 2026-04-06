@@ -1,12 +1,19 @@
 import Link from "next/link";
+import prisma from "@/lib/prisma";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   ArrowRight,
   CalendarDays,
+  MapPin,
   Newspaper,
   Sparkles,
   Users,
   ImageIcon,
   CheckCircle2,
+  Target,
+  BookOpen,
+  HeartHandshake,
 } from "lucide-react";
 
 const featuredPrograms = [
@@ -20,7 +27,7 @@ const featuredPrograms = [
     title: "Aksi Sosial",
     description:
       "Kegiatan berbagi, bakti sosial, dan kepedulian terhadap masyarakat sekitar.",
-    icon: CheckCircle2,
+    icon: HeartHandshake,
   },
   {
     title: "Media Dakwah",
@@ -30,28 +37,80 @@ const featuredPrograms = [
   },
 ];
 
-const latestNews = [
+const aboutPoints = [
   {
-    title: "RIMBA Adakan Kajian Spesial Ramadhan untuk Remaja",
-    date: "15 Maret 2026",
+    title: "Visi",
     description:
-      "Kegiatan kajian diikuti antusias oleh para remaja dengan tema membangun semangat ibadah dan akhlak mulia.",
+      "Membangun generasi remaja masjid yang aktif, berakhlak, dan berdampak di masyarakat.",
+    icon: Target,
   },
   {
-    title: "Program Berbagi Takjil Bersama Pemuda Masjid",
-    date: "10 Maret 2026",
+    title: "Misi",
     description:
-      "RIMBA mengadakan aksi sosial pembagian takjil kepada masyarakat di sekitar lingkungan masjid.",
+      "Menguatkan pembinaan keislaman, kepedulian sosial, dan kreativitas dakwah digital secara berkelanjutan.",
+    icon: BookOpen,
   },
   {
-    title: "Pelatihan Konten Dakwah Digital Resmi Dibuka",
-    date: "5 Maret 2026",
+    title: "Tujuan",
     description:
-      "Pelatihan ini bertujuan meningkatkan kemampuan remaja dalam membuat konten dakwah yang positif dan menarik.",
+      "Menjadi ruang tumbuh untuk remaja: belajar, berorganisasi, melayani, dan berkontribusi lewat program nyata.",
+    icon: CheckCircle2,
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [news, agendas] = await Promise.all([
+    prisma.news.findMany({
+      where: { isPublished: true },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        coverImage: true,
+        publishedAt: true,
+        createdAt: true,
+      },
+    }),
+    prisma.agenda.findMany({
+      where: { date: { gte: new Date() } },
+      orderBy: { date: "asc" },
+      take: 6,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        date: true,
+        location: true,
+      },
+    }),
+  ]);
+
+  const latestNews = news.slice(0, 3);
+  const upcomingAgendas = agendas.slice(0, 3);
+
+  const highlights = [
+    ...latestNews.map((item) => ({
+      key: `news-${item.id}`,
+      kind: "news" as const,
+      title: item.title,
+      description: item.excerpt ?? "Baca selengkapnya untuk detail berita.",
+      date: item.publishedAt ?? item.createdAt,
+      href: `/public/berita/${item.slug}`,
+    })),
+    ...upcomingAgendas.map((item) => ({
+      key: `agenda-${item.id}`,
+      kind: "agenda" as const,
+      title: item.title,
+      description: item.description,
+      date: item.date,
+      href: `/public/agenda/${item.id}`,
+      location: item.location,
+    })),
+  ].slice(0, 6);
+
   return (
     <>
       <section className="relative overflow-hidden">
@@ -75,7 +134,7 @@ export default function HomePage() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/program"
+                href="/public/program"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-green-700 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-green-800"
               >
                 Lihat Program
@@ -83,7 +142,7 @@ export default function HomePage() {
               </Link>
 
               <Link
-                href="/berita"
+                href="/public/berita"
                 className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-green-700 hover:text-green-700"
               >
                 Baca Berita Terbaru
@@ -151,6 +210,107 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+          <div className="grid gap-8 lg:grid-cols-3">
+            {aboutPoints.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="flex gap-4">
+                  <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-green-100 text-green-700">
+                    <Icon size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-700">
+              Highlight
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Berita terbaru & agenda mendatang
+            </h2>
+            <p className="mt-4 max-w-2xl text-slate-600">
+              Geser untuk melihat highlight. Konten berasal dari dashboard admin.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/public/berita"
+              className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-green-700 hover:text-green-700"
+            >
+              Lihat Berita
+            </Link>
+            <Link
+              href="/public/agenda"
+              className="inline-flex items-center justify-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800"
+            >
+              Lihat Agenda
+            </Link>
+          </div>
+        </div>
+
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+          {highlights.length === 0 && (
+            <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+              Belum ada berita atau agenda yang dipublish.
+            </div>
+          )}
+
+          {highlights.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              className="group w-[88%] flex-none snap-start overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:w-[420px]"
+            >
+              <div className="h-40 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500" />
+              <div className="p-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                      item.kind === "news"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
+                    {item.kind === "news" ? "Berita" : "Agenda"}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {format(item.date, "dd MMMM yyyy", { locale: id })}
+                  </span>
+                  {"location" in item && item.location && (
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                      <MapPin size={14} />
+                      {item.location}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-4 text-lg font-semibold leading-snug text-slate-900 group-hover:text-green-800">
+                  {item.title}
+                </h3>
+                <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600">
+                  {item.description}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-700">
@@ -199,7 +359,7 @@ export default function HomePage() {
             </h2>
           </div>
           <Link
-            href="/berita"
+            href="/public/berita"
             className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-800"
           >
             Lihat semua berita
@@ -208,22 +368,32 @@ export default function HomePage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {latestNews.map((news) => (
-            <article
-              key={news.title}
-              className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+          {latestNews.length === 0 && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 lg:col-span-3">
+              Belum ada berita yang dipublish.
+            </div>
+          )}
+          {latestNews.map((item) => (
+            <Link
+              key={item.id}
+              href={`/public/berita/${item.slug}`}
+              className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="h-52 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500" />
               <div className="p-6">
-                <p className="text-sm text-slate-500">{news.date}</p>
-                <h3 className="mt-3 text-xl font-semibold leading-snug text-slate-900">
-                  {news.title}
+                <p className="text-sm text-slate-500">
+                  {format(item.publishedAt ?? item.createdAt, "dd MMMM yyyy", {
+                    locale: id,
+                  })}
+                </p>
+                <h3 className="mt-3 text-xl font-semibold leading-snug text-slate-900 group-hover:text-green-800">
+                  {item.title}
                 </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {news.description}
+                <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600">
+                  {item.excerpt ?? "Baca selengkapnya untuk detail berita."}
                 </p>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
@@ -281,13 +451,13 @@ export default function HomePage() {
 
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
-                href="/kontak"
+                href="/public/kontak"
                 className="rounded-full bg-green-700 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-green-800"
               >
                 Hubungi Kami
               </Link>
               <Link
-                href="/galeri"
+                href="/public/galeri"
                 className="rounded-full border border-green-700 px-6 py-3.5 text-sm font-semibold text-green-700 transition hover:bg-green-100"
               >
                 Lihat Galeri

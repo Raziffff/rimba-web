@@ -28,6 +28,7 @@ export type AgendaMinAggregateOutputType = {
   id: string | null
   title: string | null
   description: string | null
+  category: string | null
   date: Date | null
   location: string | null
   createdAt: Date | null
@@ -37,6 +38,7 @@ export type AgendaMaxAggregateOutputType = {
   id: string | null
   title: string | null
   description: string | null
+  category: string | null
   date: Date | null
   location: string | null
   createdAt: Date | null
@@ -46,6 +48,7 @@ export type AgendaCountAggregateOutputType = {
   id: number
   title: number
   description: number
+  category: number
   date: number
   location: number
   createdAt: number
@@ -57,6 +60,7 @@ export type AgendaMinAggregateInputType = {
   id?: true
   title?: true
   description?: true
+  category?: true
   date?: true
   location?: true
   createdAt?: true
@@ -66,6 +70,7 @@ export type AgendaMaxAggregateInputType = {
   id?: true
   title?: true
   description?: true
+  category?: true
   date?: true
   location?: true
   createdAt?: true
@@ -75,6 +80,7 @@ export type AgendaCountAggregateInputType = {
   id?: true
   title?: true
   description?: true
+  category?: true
   date?: true
   location?: true
   createdAt?: true
@@ -157,6 +163,7 @@ export type AgendaGroupByOutputType = {
   id: string
   title: string
   description: string
+  category: string | null
   date: Date
   location: string | null
   createdAt: Date
@@ -187,6 +194,7 @@ export type AgendaWhereInput = {
   id?: Prisma.StringFilter<"Agenda"> | string
   title?: Prisma.StringFilter<"Agenda"> | string
   description?: Prisma.StringFilter<"Agenda"> | string
+  category?: Prisma.StringNullableFilter<"Agenda"> | string | null
   date?: Prisma.DateTimeFilter<"Agenda"> | Date | string
   location?: Prisma.StringNullableFilter<"Agenda"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Agenda"> | Date | string
@@ -196,6 +204,7 @@ export type AgendaOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
   date?: Prisma.SortOrder
   location?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -208,6 +217,7 @@ export type AgendaWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.AgendaWhereInput | Prisma.AgendaWhereInput[]
   title?: Prisma.StringFilter<"Agenda"> | string
   description?: Prisma.StringFilter<"Agenda"> | string
+  category?: Prisma.StringNullableFilter<"Agenda"> | string | null
   date?: Prisma.DateTimeFilter<"Agenda"> | Date | string
   location?: Prisma.StringNullableFilter<"Agenda"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Agenda"> | Date | string
@@ -217,6 +227,7 @@ export type AgendaOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
   date?: Prisma.SortOrder
   location?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -232,6 +243,7 @@ export type AgendaScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Agenda"> | string
   title?: Prisma.StringWithAggregatesFilter<"Agenda"> | string
   description?: Prisma.StringWithAggregatesFilter<"Agenda"> | string
+  category?: Prisma.StringNullableWithAggregatesFilter<"Agenda"> | string | null
   date?: Prisma.DateTimeWithAggregatesFilter<"Agenda"> | Date | string
   location?: Prisma.StringNullableWithAggregatesFilter<"Agenda"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agenda"> | Date | string
@@ -241,6 +253,7 @@ export type AgendaCreateInput = {
   id?: string
   title: string
   description: string
+  category?: string | null
   date: Date | string
   location?: string | null
   createdAt?: Date | string
@@ -250,6 +263,7 @@ export type AgendaUncheckedCreateInput = {
   id?: string
   title: string
   description: string
+  category?: string | null
   date: Date | string
   location?: string | null
   createdAt?: Date | string
@@ -259,6 +273,7 @@ export type AgendaUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -268,6 +283,7 @@ export type AgendaUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -277,6 +293,7 @@ export type AgendaCreateManyInput = {
   id?: string
   title: string
   description: string
+  category?: string | null
   date: Date | string
   location?: string | null
   createdAt?: Date | string
@@ -286,6 +303,7 @@ export type AgendaUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -295,6 +313,7 @@ export type AgendaUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -304,6 +323,7 @@ export type AgendaCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   date?: Prisma.SortOrder
   location?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -313,6 +333,7 @@ export type AgendaMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   date?: Prisma.SortOrder
   location?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -322,6 +343,7 @@ export type AgendaMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   date?: Prisma.SortOrder
   location?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -333,6 +355,7 @@ export type AgendaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   id?: boolean
   title?: boolean
   description?: boolean
+  category?: boolean
   date?: boolean
   location?: boolean
   createdAt?: boolean
@@ -342,6 +365,7 @@ export type AgendaSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   id?: boolean
   title?: boolean
   description?: boolean
+  category?: boolean
   date?: boolean
   location?: boolean
   createdAt?: boolean
@@ -351,6 +375,7 @@ export type AgendaSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   id?: boolean
   title?: boolean
   description?: boolean
+  category?: boolean
   date?: boolean
   location?: boolean
   createdAt?: boolean
@@ -360,12 +385,13 @@ export type AgendaSelectScalar = {
   id?: boolean
   title?: boolean
   description?: boolean
+  category?: boolean
   date?: boolean
   location?: boolean
   createdAt?: boolean
 }
 
-export type AgendaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "date" | "location" | "createdAt", ExtArgs["result"]["agenda"]>
+export type AgendaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "category" | "date" | "location" | "createdAt", ExtArgs["result"]["agenda"]>
 
 export type $AgendaPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Agenda"
@@ -374,6 +400,7 @@ export type $AgendaPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     id: string
     title: string
     description: string
+    category: string | null
     date: Date
     location: string | null
     createdAt: Date
@@ -803,6 +830,7 @@ export interface AgendaFieldRefs {
   readonly id: Prisma.FieldRef<"Agenda", 'String'>
   readonly title: Prisma.FieldRef<"Agenda", 'String'>
   readonly description: Prisma.FieldRef<"Agenda", 'String'>
+  readonly category: Prisma.FieldRef<"Agenda", 'String'>
   readonly date: Prisma.FieldRef<"Agenda", 'DateTime'>
   readonly location: Prisma.FieldRef<"Agenda", 'String'>
   readonly createdAt: Prisma.FieldRef<"Agenda", 'DateTime'>

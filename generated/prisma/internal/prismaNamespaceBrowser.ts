@@ -56,6 +56,7 @@ export const ModelName = {
   Event: 'Event',
   Gallery: 'Gallery',
   SiteSetting: 'SiteSetting',
+  ContactMessage: 'ContactMessage',
   Agenda: 'Agenda',
   FinancialTransaction: 'FinancialTransaction'
 } as const
@@ -123,6 +124,7 @@ export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof Ev
 export const GalleryScalarFieldEnum = {
   id: 'id',
   title: 'title',
+  category: 'category',
   imageUrl: 'imageUrl',
   caption: 'caption',
   createdAt: 'createdAt',
@@ -149,10 +151,22 @@ export const SiteSettingScalarFieldEnum = {
 export type SiteSettingScalarFieldEnum = (typeof SiteSettingScalarFieldEnum)[keyof typeof SiteSettingScalarFieldEnum]
 
 
+export const ContactMessageScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  message: 'message',
+  createdAt: 'createdAt'
+} as const
+
+export type ContactMessageScalarFieldEnum = (typeof ContactMessageScalarFieldEnum)[keyof typeof ContactMessageScalarFieldEnum]
+
+
 export const AgendaScalarFieldEnum = {
   id: 'id',
   title: 'title',
   description: 'description',
+  category: 'category',
   date: 'date',
   location: 'location',
   createdAt: 'createdAt'
