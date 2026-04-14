@@ -27,11 +27,16 @@ const menuItems = [
   { href: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
 ];
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  isMobile?: boolean;
+  onClose?: () => void;
+}
+
+export default function AdminSidebar({ isMobile, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-72 border-r border-slate-200 bg-white xl:block">
+    <aside className={`${isMobile ? "w-full" : "hidden xl:block w-72"} h-full border-r border-slate-200 bg-white`}>
       <div className="flex h-full flex-col">
         <div className="border-b border-slate-200 px-6 py-6">
           <div className="flex items-center gap-3">
@@ -47,7 +52,7 @@ export default function AdminSidebar() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-2 px-4 py-6">
+        <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -56,6 +61,7 @@ export default function AdminSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onClose}
                 className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
                   active
                     ? "bg-green-700 text-white shadow-lg shadow-green-700/20"
@@ -75,14 +81,17 @@ export default function AdminSidebar() {
             asChild
             className="w-full justify-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100"
           >
-            <Link href="/public" target="_blank">
+            <Link href="/public" target="_blank" onClick={onClose}>
               <ExternalLink size={18} />
               Lihat Situs
             </Link>
           </Button>
           <Button
             variant="ghost"
-            onClick={() => signOut({ callbackUrl: "/public" })}
+            onClick={() => {
+              onClose?.();
+              signOut({ callbackUrl: "/public" });
+            }}
             className="w-full justify-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
           >
             <LogOut size={18} />
