@@ -1,6 +1,5 @@
 import "./globals.css";
-import Navbar from "../components/public/navbar";
-import Footer from "../components/public/footer";
+import { Toaster } from "sonner";
 
 export const metadata = {
   title: "RIMBA",
@@ -15,9 +14,8 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body>
-        <Navbar />
         {children}
-        <Footer />
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

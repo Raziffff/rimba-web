@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/admin/page-header";
 import SectionCard from "@/components/admin/section-card";
+import SettingsForm from "@/components/admin/settings-form";
+import prisma from "@/lib/prisma";
 
 export default async function AdminPengaturanPage() {
   const session = await auth();
@@ -10,18 +12,30 @@ export default async function AdminPengaturanPage() {
     redirect("/login");
   }
 
+  const settings = await prisma.siteSetting.findUnique({
+    where: { id: 1 },
+  });
+
+  const initialData = settings ? {
+    organizationName: settings.organizationName,
+    description: settings.description ?? undefined,
+    address: settings.address ?? undefined,
+    phone: settings.phone ?? undefined,
+    email: settings.email ?? undefined,
+    instagram: settings.instagram ?? undefined,
+    youtube: settings.youtube ?? undefined,
+    logoUrl: settings.logoUrl ?? undefined,
+  } : undefined;
+
   return (
-    <section>
+    <section className="space-y-6 pb-20">
       <PageHeader
         eyebrow="Pengaturan"
         title="Pengaturan Website"
-        description="Halaman ini akan dipakai untuk mengubah profil organisasi dan informasi website."
+        description="Kelola profil organisasi, informasi kontak, dan media sosial website RIMBA."
       />
 
-      <SectionCard
-        title="Pengaturan Umum"
-        description="Tahap berikutnya kita akan hubungkan ke tabel SiteSetting di database."
-      />
+      <SettingsForm initialData={initialData} />
     </section>
   );
 }

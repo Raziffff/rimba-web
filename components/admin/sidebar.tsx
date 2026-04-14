@@ -7,16 +7,22 @@ import {
   Newspaper,
   CalendarDays,
   ImageIcon,
+  Users,
   WalletCards,
   Settings,
+  LogOut,
+  ExternalLink,
 } from "lucide-react";
 import Logo from "@/components/shared/logo";
+import { signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/berita", label: "Berita", icon: Newspaper },
   { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/admin/galeri", label: "Galeri", icon: ImageIcon },
+  { href: "/admin/anggota", label: "Anggota", icon: Users },
   { href: "/admin/keuangan", label: "Keuangan", icon: WalletCards },
   { href: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
 ];
@@ -63,16 +69,25 @@ export default function AdminSidebar() {
           })}
         </nav>
 
-        <div className="border-t border-slate-200 p-4">
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">
-              Website Organisasi
-            </p>
-            <p className="mt-2 text-xs leading-6 text-slate-500">
-              Kelola berita, agenda, galeri, dan pengaturan website RIMBA dari
-              satu dashboard.
-            </p>
-          </div>
+        <div className="border-t border-slate-200 p-4 space-y-2">
+          <Button
+            variant="ghost"
+            asChild
+            className="w-full justify-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          >
+            <Link href="/public" target="_blank">
+              <ExternalLink size={18} />
+              Lihat Situs
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => signOut({ callbackUrl: "/public" })}
+            className="w-full justify-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            <LogOut size={18} />
+            Keluar
+          </Button>
         </div>
       </div>
     </aside>

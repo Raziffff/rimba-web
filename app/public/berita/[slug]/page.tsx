@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { ArrowLeft, CalendarDays, Share2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Share2, AlertCircle } from "lucide-react";
+import { auth } from "@/lib/auth";
 
 type BeritaDetailPageProps = {
   params: Promise<{
@@ -14,8 +15,16 @@ type BeritaDetailPageProps = {
 
 export default async function BeritaDetailPage({ params }: BeritaDetailPageProps) {
   const p = await params;
+  const session = await auth();
+
+  // Jika bukan admin, hanya cari berita yang sudah published
+  // Jika admin, cari semua status berita
+  const whereClause = session?.user 
+    ? { slug: p.slug } 
+    : { slug: p.slug, isPublished: true };
+
   const news = await prisma.news.findFirst({
-    where: { slug: p.slug, isPublished: true },
+    where: whereClause,
     select: {
       title: true,
       excerpt: true,
@@ -24,6 +33,7 @@ export default async function BeritaDetailPage({ params }: BeritaDetailPageProps
       publishedAt: true,
       createdAt: true,
       slug: true,
+      isPublished: true,
     },
   });
 
@@ -62,8 +72,25 @@ export default async function BeritaDetailPage({ params }: BeritaDetailPageProps
         </div>
       </div>
 
-      <div className="mb-10 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
-        <div className="h-64 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500 sm:h-80" />
+      {!news.isPublished && (
+        <div className="mb-8 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+          <AlertCircle size={20} />
+          <p className="text-sm font-medium">
+            Berita ini berstatus <strong>Draft</strong>. Hanya Admin yang dapat melihat pratinjau ini.
+          </p>
+        </div>
+      )}
+
+      <div className="mb-10 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm relative">
+        {news.coverImage ? (
+          <img 
+            src={news.coverImage} 
+            alt={news.title} 
+            className="h-64 w-full object-cover sm:h-80"
+          />
+        ) : (
+          <div className="h-64 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500 sm:h-80" />
+        )}
       </div>
 
       <p className="inline-flex items-center gap-2 text-sm text-slate-500">

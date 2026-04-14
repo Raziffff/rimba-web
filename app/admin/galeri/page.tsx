@@ -1,21 +1,38 @@
 import PageHeader from "@/components/admin/page-header";
 import SectionCard from "@/components/admin/section-card";
+import GalleryForm from "@/components/admin/gallery-form";
+import GalleryList from "@/components/admin/gallery-list";
+import prisma from "@/lib/prisma";
 
-export default function AdminGaleriPage() {
+export default async function AdminGaleriPage() {
+  const items = await prisma.gallery.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
-    <section>
+    <section className="space-y-8 pb-20">
       <PageHeader
         eyebrow="Admin Galeri"
         title="Kelola Galeri"
-        description="Gunakan halaman ini untuk menambah dan mengelola dokumentasi foto kegiatan."
+        description="Dokumentasikan kegiatan organisasi melalui foto-foto terbaik."
       />
 
-      <SectionCard
-        title="Daftar Foto"
-        description="Daftar foto kegiatan yang sudah diunggah."
-      >
-        <p className="text-slate-500 italic">Sedang dalam pengembangan...</p>
-      </SectionCard>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <SectionCard
+            title="Daftar Dokumentasi"
+            description={`Menampilkan ${items.length} foto dalam galeri.`}
+          >
+            <div className="mt-4">
+              <GalleryList items={items} />
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="lg:col-span-1">
+          <GalleryForm />
+        </div>
+      </div>
     </section>
   );
 }

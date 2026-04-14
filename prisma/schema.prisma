@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -101,4 +100,15 @@ model FinancialTransaction {
   date        DateTime        @default(now())
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  imageUrl  String?
+  category  String?  // e.g., "Pengurus Inti", "Divisi Dakwah", etc.
+  order     Int      @default(0) // For sorting
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

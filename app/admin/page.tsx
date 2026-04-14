@@ -7,38 +7,16 @@ import {
   Users,
   WalletCards,
   ArrowUpRight,
-  ImageIcon,
 } from "lucide-react";
 import PageHeader from "@/components/admin/page-header";
 import StatCard from "@/components/admin/stat-card";
 import SectionCard from "@/components/admin/section-card";
-
-const stats = [
-  {
-    title: "Total Berita",
-    value: "12",
-    description: "Artikel yang sudah dibuat",
-    icon: Newspaper,
-  },
-  {
-    title: "Total Agenda",
-    value: "8",
-    description: "Kegiatan terjadwal",
-    icon: CalendarDays,
-  },
-  {
-    title: "Saldo Kas",
-    value: "Rp 1,75Jt",
-    description: "Dana tersedia saat ini",
-    icon: WalletCards,
-  },
-  {
-    title: "Anggota Aktif",
-    value: "120+",
-    description: "Data tampilan organisasi",
-    icon: Users,
-  },
-];
+import prisma from "@/lib/prisma";
+import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { TransactionType } from "@prisma/client";
 
 const recentActivities = [
   {
@@ -65,6 +43,62 @@ export default async function AdminDashboardPage() {
   if (!session?.user) {
     redirect("/login");
   }
+
+  // Fetch dynamic stats
+  const [totalNews, totalAgenda, totalUsers, transactions, upcomingAgendas] = await Promise.all([
+    prisma.news.count(),
+    prisma.agenda.count(),
+    prisma.user.count(),
+    prisma.financialTransaction.findMany({
+      select: {
+        type: true,
+        amount: true,
+      },
+    }),
+    prisma.agenda.findMany({
+      where: {
+        date: {
+          gte: new Date(),
+        },
+      },
+      orderBy: {
+        date: "asc",
+      },
+      take: 3,
+    }),
+  ]);
+
+  // Calculate net balance
+  const balance = transactions.reduce((acc, curr) => {
+    return curr.type === TransactionType.INCOME ? acc + curr.amount : acc - curr.amount;
+  }, 0);
+
+  const stats = [
+    {
+      title: "Total Berita",
+      value: totalNews.toString(),
+      description: "Artikel yang sudah dibuat",
+      icon: Newspaper,
+    },
+    {
+      title: "Total Agenda",
+      value: totalAgenda.toString(),
+      description: "Kegiatan terjadwal",
+      icon: CalendarDays,
+    },
+    {
+      title: "Saldo Kas",
+      value: formatCurrency(balance),
+      description: "Dana tersedia saat ini",
+      icon: WalletCards,
+    },
+    {
+      title: "Anggota Aktif",
+      value: totalUsers.toString(),
+      description: "Data tampilan organisasi",
+      icon: Users,
+    },
+  ];
 
   return (
     <section className="space-y-6">
@@ -169,22 +203,64 @@ export default async function AdminDashboardPage() {
           </div>
         </SectionCard>
 
+      <div className="grid gap-6 xl:grid-cols-2">
+        <SectionCard
+          title="Agenda Mendatang"
+          description="Daftar kegiatan organisasi dalam waktu dekat."
+        >
+          <div className="mt-4 space-y-4">
+            {upcomingAgendas.length > 0 ? (
+              upcomingAgendas.map((agenda) => (
+                <div key={agenda.id} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 transition hover:bg-slate-50">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-green-50 text-green-700">
+                      <span className="text-xs font-bold uppercase">{format(agenda.date, "MMM", { locale: idLocale })}</span>
+                      <span className="text-lg font-bold leading-none">{format(agenda.date, "dd")}</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">{agenda.title}</p>
+                      <p className="text-xs text-slate-500">{agenda.location || "Lokasi belum ditentukan"}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href={`/admin/agendaedit/${agenda.id}`}>Detail</Link>
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400">
+                <CalendarDays size={40} strokeWidth={1} className="mb-2 opacity-20" />
+                <p className="text-sm italic">Tidak ada agenda mendatang.</p>
+              </div>
+            )}
+            <Button variant="outline" className="w-full rounded-xl" asChild>
+              <Link href="/admin/agenda">Lihat Semua Agenda</Link>
+            </Button>
+          </div>
+        </SectionCard>
+
         <SectionCard
           title="Aktivitas Terbaru"
-          description="Riwayat singkat perubahan konten dashboard."
+          description="Log aktivitas sistem terakhir."
         >
-          <div className="space-y-4">
-            {recentActivities.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <p className="font-medium text-slate-900">{item.title}</p>
-                <p className="mt-1 text-sm text-slate-500">{item.time}</p>
+          <div className="mt-4 space-y-6">
+            {recentActivities.map((activity, index) => (
+              <div key={index} className="relative flex gap-4">
+                {index !== recentActivities.length - 1 && (
+                  <div className="absolute left-2.5 top-7 h-full w-px bg-slate-100" />
+                )}
+                <div className="mt-1.5 h-5 w-5 rounded-full border-4 border-white bg-green-600 shadow-sm" />
+                <div className="flex-1 pb-4">
+                  <p className="text-sm font-medium text-slate-900">
+                    {activity.title}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{activity.time}</p>
+                </div>
               </div>
             ))}
           </div>
         </SectionCard>
+      </div>
       </div>
     </section>
   );

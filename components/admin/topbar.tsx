@@ -1,4 +1,9 @@
-import { Bell, Search } from "lucide-react";
+"use client";
+
+import { Bell, Search, LogOut, ExternalLink } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function AdminTopbar() {
   return (
@@ -24,6 +29,26 @@ export default function AdminTopbar() {
         >
           <Bell size={18} />
         </button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          asChild
+          className="flex xl:hidden h-11 w-11 items-center justify-center rounded-2xl border-slate-200 text-slate-600 hover:bg-slate-100"
+        >
+          <Link href="/public" target="_blank">
+            <ExternalLink size={18} />
+          </Link>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => signOut({ callbackUrl: "/public" })}
+          className="flex xl:hidden h-11 w-11 items-center justify-center rounded-2xl border-slate-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+        >
+          <LogOut size={18} />
+        </Button>
       </div>
     </div>
   );

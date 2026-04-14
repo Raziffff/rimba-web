@@ -81,3 +81,8 @@ export type Agenda = Prisma.AgendaModel
  * 
  */
 export type FinancialTransaction = Prisma.FinancialTransactionModel
+/**
+ * Model Member
+ * 
+ */
+export type Member = Prisma.MemberModel
