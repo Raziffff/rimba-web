@@ -7,8 +7,7 @@ import SummaryCards from "@/components/admin/finance/summary-cards";
 import TransactionTable, { type Transaction as FinanceTransaction } from "@/components/admin/finance/transaction-table";
 import TransactionForm from "@/components/admin/finance/transaction-form";
 import FinanceChart from "@/components/admin/finance/finance-chart";
-import type { FinancialTransaction } from "@prisma/client";
-import { TransactionType } from "@prisma/client";
+import { TransactionType, type FinancialTransaction } from "@prisma/client";
 
 export default async function AdminKeuanganPage() {
   const session = await auth();
