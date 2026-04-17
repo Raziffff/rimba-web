@@ -71,7 +71,7 @@ export default function AdminAnggotaClientPage({ initialMembers }: AdminAnggotaC
             title="Database Anggota"
             description="Daftar pengurus dan anggota yang aktif saat ini."
           >
-            <div className="mt-4 -mx-6">
+            <div className="mt-4 sm:-mx-6">
               <MemberTable 
                 members={initialMembers} 
                 onEdit={handleEdit}

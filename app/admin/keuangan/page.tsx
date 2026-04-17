@@ -82,7 +82,7 @@ export default async function AdminKeuanganPage() {
             title="Riwayat Transaksi"
             description="Daftar transaksi terbaru yang dicatat oleh bendahara."
           >
-            <div className="mt-4 -mx-6">
+            <div className="mt-4 sm:-mx-6">
               <TransactionTable 
                 transactions={transactions as unknown as FinanceTransaction[]} 
               />

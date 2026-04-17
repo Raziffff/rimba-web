@@ -20,6 +20,12 @@ interface FinanceChartProps {
 }
 
 export default function FinanceChart({ data }: FinanceChartProps) {
+  const compactFormatter = new Intl.NumberFormat("id-ID", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+  });
+
   return (
     <div className="h-[400px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -28,7 +34,7 @@ export default function FinanceChart({ data }: FinanceChartProps) {
           margin={{
             top: 20,
             right: 30,
-            left: 20,
+            left: 72,
             bottom: 5,
           }}
         >
@@ -44,7 +50,7 @@ export default function FinanceChart({ data }: FinanceChartProps) {
             axisLine={false}
             tickLine={false}
             tick={{ fill: "#64748b", fontSize: 12 }}
-            tickFormatter={(value) => `Rp ${value.toLocaleString()}`}
+            tickFormatter={(value) => `Rp ${compactFormatter.format(Number(value))}`}
           />
           <Tooltip
             cursor={{ fill: "#f8fafc" }}
