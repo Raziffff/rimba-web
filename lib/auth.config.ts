@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 export const authConfig = {
@@ -14,7 +14,7 @@ export const authConfig = {
     signIn: "/login",
   },
   callbacks: {
-    authorized({ auth, request: { nextUrl } }: any) {
+    authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
       
@@ -24,13 +24,13 @@ export const authConfig = {
       }
       return true;
     },
-    async jwt({ token, user }: any) {
+    async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role?: string }).role;
+        token.role = user.role;
       }
       return token;
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role as string;
@@ -38,4 +38,4 @@ export const authConfig = {
       return session;
     },
   },
-} as any;
+} satisfies NextAuthConfig;

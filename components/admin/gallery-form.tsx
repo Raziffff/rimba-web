@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { gallerySchema, type GalleryInput } from "@/lib/validations";
-import { addGalleryItem } from "@/app/admin/galeri/actions";
+import { addGalleryItem, uploadGalleryImage } from "@/app/admin/galeri/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Plus, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function GalleryForm() {
   const [loading, setLoading] = useState(false);
@@ -52,23 +51,21 @@ export default function GalleryForm() {
 
     setUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `gallery/${fileName}`;
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const { error: uploadError } = await supabase.storage
-        .from("rimba-web")
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
+      const result = await uploadGalleryImage(formData);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
 
-      const { data } = supabase.storage
-        .from("rimba-web")
-        .getPublicUrl(filePath);
+      if (!result?.publicUrl) {
+        toast.error("Gagal mendapatkan URL gambar.");
+        return;
+      }
 
-      setValue("imageUrl", data.publicUrl);
+      setValue("imageUrl", result.publicUrl);
       toast.success("Gambar berhasil diunggah!");
     } catch (error) {
       const err = error as Error;
