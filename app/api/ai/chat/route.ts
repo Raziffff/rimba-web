@@ -76,6 +76,27 @@ function looksForbidden(text: string) {
   return forbidden.some((k) => t.includes(k));
 }
 
+function isSmallTalk(text: string) {
+  const t = text.toLowerCase().trim();
+  const patterns = [
+    "halo",
+    "hai",
+    "hi",
+    "assalamualaikum",
+    "asalamualaikum",
+    "apa kabar",
+    "gimana kabar",
+    "terima kasih",
+    "makasih",
+    "thanks",
+    "pagi",
+    "siang",
+    "sore",
+    "malam",
+  ];
+  return patterns.some((p) => t === p || t.startsWith(`${p} `) || t.includes(p));
+}
+
 export async function POST(req: Request) {
   const ip = getClientIp(req);
   if (!rateLimitOk(ip)) {
@@ -98,6 +119,13 @@ export async function POST(req: Request) {
   }
 
   const { message, history } = parsed.data;
+
+  if (isSmallTalk(message)) {
+    return NextResponse.json({
+      answer:
+        "Halo! Saya Tanya RIMBA. Saya bisa bantu info publik seputar agenda, berita, program/kegiatan, dan kontak di website ini.\n\nContoh pertanyaan: “Agenda terdekat apa?”, “Berita terbaru apa?”, atau “Kontaknya di mana?”",
+    });
+  }
 
   if (looksForbidden(message)) {
     return NextResponse.json({
