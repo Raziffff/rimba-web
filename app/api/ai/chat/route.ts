@@ -178,12 +178,49 @@ async function callOpenAI(params: {
   history: Array<{ role: "user" | "assistant"; content: string }>;
   context: string;
 }) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return { error: "Konfigurasi AI belum tersedia." } as const;
-  }
+  const groqApiKey = process.env.GROQ_API_KEY;
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  const forcedProvider = (process.env.AI_PROVIDER || "").trim().toLowerCase();
 
-  const model = process.env.OPENAI_MODEL_CHAT || "gpt-4o-mini";
+  const groqProvider = groqApiKey
+    ? ({
+        name: "Groq",
+        apiBaseUrl: "https://api.groq.com/openai/v1",
+        apiKey: groqApiKey,
+        model: process.env.GROQ_MODEL_CHAT || "llama-3.1-8b-instant",
+        keyLabel: "GROQ_API_KEY",
+        modelLabel: "GROQ_MODEL_CHAT",
+      } as const)
+    : null;
+
+  const openaiProvider = openaiApiKey
+    ? ({
+        name: "OpenAI",
+        apiBaseUrl: "https://api.openai.com/v1",
+        apiKey: openaiApiKey,
+        model: process.env.OPENAI_MODEL_CHAT || "gpt-4o-mini",
+        keyLabel: "OPENAI_API_KEY",
+        modelLabel: "OPENAI_MODEL_CHAT",
+      } as const)
+    : null;
+
+  const provider =
+    forcedProvider === "groq"
+      ? groqProvider
+      : forcedProvider === "openai"
+        ? openaiProvider
+        : groqProvider ?? openaiProvider;
+
+  if (!provider) {
+    return {
+      error:
+        forcedProvider === "groq"
+          ? "Konfigurasi AI belum tersedia. Isi GROQ_API_KEY."
+          : forcedProvider === "openai"
+            ? "Konfigurasi AI belum tersedia. Isi OPENAI_API_KEY."
+            : "Konfigurasi AI belum tersedia. Isi GROQ_API_KEY (atau OPENAI_API_KEY).",
+    } as const;
+  }
 
   const system = [
     "Anda adalah asisten chatbot publik untuk website organisasi RIMBA.",
@@ -203,14 +240,14 @@ async function callOpenAI(params: {
     { role: "user", content: params.message },
   ];
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch(`${provider.apiBaseUrl}/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${provider.apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model,
+      model: provider.model,
       messages,
       temperature: 0.2,
       max_tokens: 400,
@@ -227,34 +264,32 @@ async function callOpenAI(params: {
       providerMessage = raw;
     }
 
-    console.error("OpenAI error:", {
+    console.error(`${provider.name} error:`, {
       status: res.status,
       statusText: res.statusText,
-      model,
+      model: provider.model,
       providerMessage: providerMessage ? providerMessage.slice(0, 500) : "",
     });
 
     if (res.status === 401) {
       return {
-        error: "AI ditolak (API key salah/expired). Coba periksa OPENAI_API_KEY.",
+        error: `AI (${provider.name}) ditolak (API key salah/expired). Coba periksa ${provider.keyLabel}.`,
       } as const;
     }
 
     if (res.status === 429) {
       return {
-        error:
-          "AI sedang dibatasi (rate limit/kuota). Coba lagi nanti atau cek billing/usage.",
+        error: `AI (${provider.name}) sedang dibatasi (rate limit/kuota). Coba lagi nanti atau cek usage/limit.`,
       } as const;
     }
 
     if (res.status === 404) {
       return {
-        error:
-          "Model AI tidak tersedia untuk API key ini. Coba ganti OPENAI_MODEL_CHAT.",
+        error: `Model AI (${provider.name}) tidak tersedia. Coba ganti ${provider.modelLabel}.`,
       } as const;
     }
 
-    return { error: "AI sedang bermasalah. Coba lagi nanti." } as const;
+    return { error: `AI (${provider.name}) sedang bermasalah. Coba lagi nanti.` } as const;
   }
 
   const data = (await res.json()) as {
@@ -262,7 +297,7 @@ async function callOpenAI(params: {
   };
   const content = data.choices?.[0]?.message?.content?.trim();
   if (!content) {
-    return { error: "AI tidak mengembalikan jawaban." } as const;
+    return { error: `AI (${provider.name}) tidak mengembalikan jawaban.` } as const;
   }
 
   return { answer: content } as const;
