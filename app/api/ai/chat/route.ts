@@ -218,6 +218,42 @@ async function callOpenAI(params: {
   });
 
   if (!res.ok) {
+    const raw = await res.text().catch(() => "");
+    let providerMessage = "";
+    try {
+      const parsed = JSON.parse(raw) as { error?: { message?: string } };
+      providerMessage = parsed.error?.message || "";
+    } catch {
+      providerMessage = raw;
+    }
+
+    console.error("OpenAI error:", {
+      status: res.status,
+      statusText: res.statusText,
+      model,
+      providerMessage: providerMessage ? providerMessage.slice(0, 500) : "",
+    });
+
+    if (res.status === 401) {
+      return {
+        error: "AI ditolak (API key salah/expired). Coba periksa OPENAI_API_KEY.",
+      } as const;
+    }
+
+    if (res.status === 429) {
+      return {
+        error:
+          "AI sedang dibatasi (rate limit/kuota). Coba lagi nanti atau cek billing/usage.",
+      } as const;
+    }
+
+    if (res.status === 404) {
+      return {
+        error:
+          "Model AI tidak tersedia untuk API key ini. Coba ganti OPENAI_MODEL_CHAT.",
+      } as const;
+    }
+
     return { error: "AI sedang bermasalah. Coba lagi nanti." } as const;
   }
 
