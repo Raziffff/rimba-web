@@ -19,16 +19,41 @@ import Logo from "@/components/shared/logo";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/berita", label: "Berita", icon: Newspaper },
-  { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/admin/pendaftaran", label: "Pendaftaran", icon: ClipboardList },
-  { href: "/admin/pesan", label: "Pesan Masuk", icon: MessageSquare },
-  { href: "/admin/galeri", label: "Galeri", icon: ImageIcon },
-  { href: "/admin/anggota", label: "Anggota", icon: Users },
-  { href: "/admin/keuangan", label: "Keuangan", icon: WalletCards },
-  { href: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
+const menuGroups = [
+  {
+    title: "Utama",
+    items: [
+      { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: "Konten",
+    items: [
+      { href: "/admin/berita", label: "Berita", icon: Newspaper },
+      { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+      { href: "/admin/galeri", label: "Galeri", icon: ImageIcon },
+    ],
+  },
+  {
+    title: "Interaksi",
+    items: [
+      { href: "/admin/pendaftaran", label: "Pendaftaran", icon: ClipboardList },
+      { href: "/admin/pesan", label: "Pesan Masuk", icon: MessageSquare },
+    ],
+  },
+  {
+    title: "Organisasi",
+    items: [
+      { href: "/admin/anggota", label: "Anggota", icon: Users },
+      { href: "/admin/keuangan", label: "Keuangan", icon: WalletCards },
+    ],
+  },
+  {
+    title: "Sistem",
+    items: [
+      { href: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
+    ],
+  },
 ];
 
 interface AdminSidebarProps {
@@ -56,27 +81,36 @@ export default function AdminSidebar({ isMobile, onClose }: AdminSidebarProps) {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
+        <nav className="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
+          {menuGroups.map((group) => (
+            <div key={group.title} className="space-y-2">
+              <p className="px-4 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
+                {group.title}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                  active
-                    ? "bg-green-700 text-white shadow-lg shadow-green-700/20"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium transition ${
+                        active
+                          ? "bg-green-700 text-white shadow-lg shadow-green-700/20"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      <Icon size={18} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-slate-200 p-4 space-y-2">
