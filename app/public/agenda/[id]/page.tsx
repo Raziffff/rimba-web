@@ -38,10 +38,9 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
     notFound();
   }
 
-  const now = Date.now();
-  const registrationClosed =
-    agenda.registrationDeadline != null &&
-    agenda.registrationDeadline.getTime() < now;
+const registrationClosed =
+  agenda.registrationDeadline != null &&
+  agenda.registrationDeadline < new Date();
 
   const h = await headers();
   const host = h.get("host") ?? "";
