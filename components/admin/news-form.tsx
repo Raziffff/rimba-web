@@ -71,8 +71,8 @@ export default function NewsForm({ initialData, id }: NewsFormProps) {
         router.push("/admin/berita");
         router.refresh();
       }
-    } catch (error) {
-      if ((error as Error).message === "NEXT_REDIRECT") {
+    } catch (e) {
+      if ((e as Error).message === "NEXT_REDIRECT") {
         return;
       }
       toast.error("Terjadi kesalahan yang tidak terduga.");

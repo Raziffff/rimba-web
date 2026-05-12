@@ -17,6 +17,10 @@ export const agendaSchema = z.object({
   category: z.string().optional(),
   date: z.date({ message: "Tanggal agenda harus diisi" }),
   location: z.string().optional(),
+  status: z.enum(["SCHEDULED", "CHANGED", "CANCELLED"]).optional(),
+  statusNote: z.string().max(500).optional(),
+  requirements: z.string().max(1200).optional(),
+  registrationDeadline: z.date().optional(),
 });
 
 export type AgendaInput = z.infer<typeof agendaSchema>;

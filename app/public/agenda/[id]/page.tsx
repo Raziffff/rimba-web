@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { ArrowLeft, CalendarDays, MapPin, Share2 } from "lucide-react";
+import AgendaRegistrationForm from "@/components/public/agenda-registration-form";
 
 type AgendaDetailPageProps = {
   params: Promise<{
@@ -24,7 +25,12 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
       date: true,
       location: true,
       category: true,
+      status: true,
+      statusNote: true,
+      requirements: true,
+      registrationDeadline: true,
       createdAt: true,
+      updatedAt: true,
     },
   });
 
@@ -73,6 +79,16 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
               {agenda.location}
             </p>
           )}
+          {agenda.status === "CANCELLED" && (
+            <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+              Dibatalkan
+            </span>
+          )}
+          {agenda.status === "CHANGED" && (
+            <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+              Diubah
+            </span>
+          )}
           {agenda.category && (
             <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
               {agenda.category}
@@ -84,9 +100,42 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
           {agenda.title}
         </h1>
 
+        {agenda.statusNote && (
+          <div className="mt-5 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+            <p className="font-semibold">Catatan perubahan</p>
+            <p className="mt-2 whitespace-pre-wrap leading-7">{agenda.statusNote}</p>
+          </div>
+        )}
+
         <p className="mt-5 whitespace-pre-wrap leading-8 text-slate-700">
           {agenda.description}
         </p>
+
+        <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+          <p className="text-sm font-semibold text-slate-900">Informasi pendaftaran</p>
+          <div className="mt-3 space-y-2 text-sm text-slate-700">
+            <p>
+              <span className="font-semibold">Batas pendaftaran:</span>{" "}
+              {agenda.registrationDeadline
+                ? format(agenda.registrationDeadline, "dd MMMM yyyy", { locale: id })
+                : "Sampai kuota terpenuhi"}
+            </p>
+            <p className="whitespace-pre-wrap leading-7">
+              <span className="font-semibold">Syarat:</span>{" "}
+              {agenda.requirements?.trim()
+                ? agenda.requirements
+                : "Silakan lihat deskripsi agenda atau hubungi panitia untuk informasi syarat."}
+            </p>
+          </div>
+          <div className="mt-6">
+            <AgendaRegistrationForm
+              agendaId={agenda.id}
+              agendaTitle={agenda.title}
+              disabled={agenda.status === "CANCELLED"}
+              deadlineIso={agenda.registrationDeadline?.toISOString() ?? null}
+            />
+          </div>
+        </div>
 
         <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
           <p className="text-sm font-semibold text-slate-900">Bagikan agenda</p>
@@ -121,4 +170,3 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
     </article>
   );
 }
-

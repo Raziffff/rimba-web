@@ -34,6 +34,7 @@ export default function AgendaForm({ initialData, id }: AgendaFormProps) {
       title: "",
       description: "",
       date: new Date(),
+      status: "SCHEDULED",
     },
   });
 
@@ -55,8 +56,8 @@ export default function AgendaForm({ initialData, id }: AgendaFormProps) {
         router.push("/admin/agenda");
         router.refresh();
       }
-    } catch (error) {
-      if ((error as Error).message === "NEXT_REDIRECT") {
+    } catch (e) {
+      if ((e as Error).message === "NEXT_REDIRECT") {
         return;
       }
       toast.error("Terjadi kesalahan yang tidak terduga.");
@@ -99,6 +100,32 @@ export default function AgendaForm({ initialData, id }: AgendaFormProps) {
                   <p className="text-xs text-red-500">{errors.description.message}</p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="requirements">Syarat Pendaftaran (Opsional)</Label>
+                <Textarea
+                  id="requirements"
+                  {...register("requirements")}
+                  placeholder="Contoh: membawa alat tulis, berpakaian sopan, usia minimal 12 tahun, dll"
+                  className="rounded-xl border-slate-300 min-h-[120px] leading-relaxed"
+                />
+                {errors.requirements && (
+                  <p className="text-xs text-red-500">{errors.requirements.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="statusNote">Catatan Perubahan (Opsional)</Label>
+                <Textarea
+                  id="statusNote"
+                  {...register("statusNote")}
+                  placeholder="Contoh: jadwal diundur karena cuaca, lokasi pindah, dll"
+                  className="rounded-xl border-slate-300 min-h-[120px] leading-relaxed"
+                />
+                {errors.statusNote && (
+                  <p className="text-xs text-red-500">{errors.statusNote.message}</p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -126,6 +153,24 @@ export default function AgendaForm({ initialData, id }: AgendaFormProps) {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="registrationDeadline" className="flex items-center gap-2">
+                  <CalendarIcon size={16} />
+                  Batas Pendaftaran (Opsional)
+                </Label>
+                <Input
+                  id="registrationDeadline"
+                  type="date"
+                  {...register("registrationDeadline", { valueAsDate: true })}
+                  className="rounded-xl border-slate-300"
+                />
+                {errors.registrationDeadline && (
+                  <p className="text-xs text-red-500">
+                    {errors.registrationDeadline.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="location" className="flex items-center gap-2">
                   <MapPin size={16} />
                   Lokasi / Tempat
@@ -146,6 +191,19 @@ export default function AgendaForm({ initialData, id }: AgendaFormProps) {
                   placeholder="Contoh: Lomba, Kajian, Sosial"
                   className="rounded-xl border-slate-300"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status Agenda</Label>
+                <select
+                  id="status"
+                  {...register("status")}
+                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                >
+                  <option value="SCHEDULED">Terjadwal</option>
+                  <option value="CHANGED">Diubah</option>
+                  <option value="CANCELLED">Dibatalkan</option>
+                </select>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3 pt-6">

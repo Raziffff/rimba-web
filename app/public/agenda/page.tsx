@@ -28,6 +28,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
       date: true,
       location: true,
       category: true,
+      status: true,
     },
   });
 
@@ -98,6 +99,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           date: a.date.toISOString(),
           location: a.location,
           category: a.category,
+          status: a.status,
         }))}
       />
 
@@ -131,11 +133,23 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
                       {a.description}
                     </p>
                   </div>
-                  {a.category && (
-                    <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                      {a.category}
-                    </span>
-                  )}
+                  <div className="flex flex-col items-end gap-2">
+                    {a.status === "CANCELLED" && (
+                      <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                        Dibatalkan
+                      </span>
+                    )}
+                    {a.status === "CHANGED" && (
+                      <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                        Diubah
+                      </span>
+                    )}
+                    {a.category && (
+                      <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                        {a.category}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))
@@ -145,4 +159,3 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
     </section>
   );
 }
-

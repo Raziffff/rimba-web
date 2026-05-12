@@ -45,7 +45,7 @@ export default function AgendaTable({ agendas }: AgendaTableProps) {
       } else {
         toast.success("Agenda berhasil dihapus");
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan");
     } finally {
       setIsDeleting(null);

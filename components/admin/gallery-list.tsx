@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { deleteGalleryItem } from "@/app/admin/galeri/actions";
 import { toast } from "sonner";
-import { Trash2, Loader2, Maximize2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import {
@@ -43,7 +43,7 @@ export default function GalleryList({ items }: GalleryListProps) {
         toast.success("Foto berhasil dihapus");
         router.refresh();
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan");
     } finally {
       setIsDeleting(null);

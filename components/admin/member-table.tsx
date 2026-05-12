@@ -42,7 +42,7 @@ export default function MemberTable({ members, onEdit }: MemberTableProps) {
       } else {
         toast.success("Anggota berhasil dihapus");
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan");
     } finally {
       setIsDeleting(null);

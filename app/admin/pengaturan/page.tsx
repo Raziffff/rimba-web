@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/admin/page-header";
-import SectionCard from "@/components/admin/section-card";
 import SettingsForm from "@/components/admin/settings-form";
 import prisma from "@/lib/prisma";
 

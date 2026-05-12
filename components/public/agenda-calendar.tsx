@@ -15,6 +15,7 @@ type AgendaItem = {
   date: string;
   location: string | null;
   category: string | null;
+  status: "SCHEDULED" | "CHANGED" | "CANCELLED";
 };
 
 type AgendaCalendarProps = {
@@ -91,11 +92,23 @@ export default function AgendaCalendar({ agendas }: AgendaCalendarProps) {
                       </p>
                     )}
                   </div>
-                  {agenda.category && (
-                    <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                      {agenda.category}
-                    </span>
-                  )}
+                  <div className="flex flex-col items-end gap-2">
+                    {agenda.status === "CANCELLED" && (
+                      <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                        Dibatalkan
+                      </span>
+                    )}
+                    {agenda.status === "CHANGED" && (
+                      <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                        Diubah
+                      </span>
+                    )}
+                    {agenda.category && (
+                      <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                        {agenda.category}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))
@@ -105,4 +118,3 @@ export default function AgendaCalendar({ agendas }: AgendaCalendarProps) {
     </div>
   );
 }
-

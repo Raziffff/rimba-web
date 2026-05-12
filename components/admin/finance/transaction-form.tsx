@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Save, X, PlusCircle, MinusCircle } from "lucide-react";
+import { Loader2, Save, PlusCircle, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function TransactionForm() {

@@ -14,6 +14,17 @@ export default async function EditAgendaPage({ params }: EditAgendaPageProps) {
 
   const agenda = await prisma.agenda.findUnique({
     where: { id },
+    select: {
+      title: true,
+      description: true,
+      category: true,
+      date: true,
+      location: true,
+      status: true,
+      statusNote: true,
+      requirements: true,
+      registrationDeadline: true,
+    },
   });
 
   if (!agenda) {
@@ -26,6 +37,10 @@ export default async function EditAgendaPage({ params }: EditAgendaPageProps) {
     category: agenda.category ?? undefined,
     date: agenda.date,
     location: agenda.location ?? undefined,
+    status: agenda.status,
+    statusNote: agenda.statusNote ?? undefined,
+    requirements: agenda.requirements ?? undefined,
+    registrationDeadline: agenda.registrationDeadline ?? undefined,
   };
 
   return (

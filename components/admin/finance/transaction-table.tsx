@@ -43,7 +43,7 @@ export default function TransactionTable({ transactions }: TransactionTableProps
       } else {
         toast.success("Transaksi berhasil dihapus");
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan");
     } finally {
       setIsDeleting(null);

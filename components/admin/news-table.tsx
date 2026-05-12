@@ -45,7 +45,7 @@ export default function NewsTable({ news }: NewsTableProps) {
       } else {
         toast.success("Berita berhasil dihapus");
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan");
     } finally {
       setIsDeleting(null);

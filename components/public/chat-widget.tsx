@@ -11,6 +11,14 @@ type ChatMessage = {
   content: string;
 };
 
+const quickQuestions = [
+  { label: "Agenda terdekat", text: "Agenda terdekat apa?" },
+  { label: "Lokasi kegiatan", text: "Lokasi kegiatan biasanya di mana?" },
+  { label: "Berita terbaru", text: "Berita terbaru apa?" },
+  { label: "Program", text: "Program/kegiatan RIMBA apa saja?" },
+  { label: "Kontak", text: "Kontak RIMBA di mana?" },
+];
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -39,8 +47,8 @@ export default function ChatWidget() {
     el.scrollTop = el.scrollHeight;
   }, [open, messages]);
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || loading) return;
 
     setInput("");
@@ -112,6 +120,19 @@ export default function ChatWidget() {
               ref={listRef}
               className="max-h-[55vh] space-y-3 overflow-y-auto px-4 py-3"
             >
+              <div className="flex flex-wrap gap-2">
+                {quickQuestions.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => void send(q.text)}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-green-600 hover:text-green-700 disabled:opacity-60"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
               {messages.map((m, idx) => {
                 const isUser = m.role === "user";
                 return (
