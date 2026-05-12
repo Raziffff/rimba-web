@@ -11,6 +11,8 @@ import {
   WalletCards,
   Settings,
   LogOut,
+  ClipboardList,
+  MessageSquare,
   ExternalLink,
 } from "lucide-react";
 import Logo from "@/components/shared/logo";
@@ -21,6 +23,8 @@ const menuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/berita", label: "Berita", icon: Newspaper },
   { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+  { href: "/admin/pendaftaran", label: "Pendaftaran", icon: ClipboardList },
+  { href: "/admin/pesan", label: "Pesan Masuk", icon: MessageSquare },
   { href: "/admin/galeri", label: "Galeri", icon: ImageIcon },
   { href: "/admin/anggota", label: "Anggota", icon: Users },
   { href: "/admin/keuangan", label: "Keuangan", icon: WalletCards },

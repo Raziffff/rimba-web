@@ -32,11 +32,13 @@ export async function submitContact(
 
   const { name, email, message } = parsed.data;
 
-  await prisma.contactMessage.create({
+  await prisma.feedbackMessage.create({
     data: {
+      category: "QUESTION", // Default untuk form kontak umum
       name,
-      email,
+      contact: email,
       message,
+      status: "NEW",
     },
   });
 
