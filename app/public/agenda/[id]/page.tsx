@@ -38,6 +38,11 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
     notFound();
   }
 
+  const now = Date.now();
+  const registrationClosed =
+    agenda.registrationDeadline != null &&
+    agenda.registrationDeadline.getTime() < now;
+
   const h = await headers();
   const host = h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? "https";
@@ -56,15 +61,25 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
           Kembali
         </Link>
 
-        <a
-          href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-green-700 hover:text-green-700"
-        >
-          <Share2 size={16} />
-          Share
-        </a>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {agenda.status !== "CANCELLED" && !registrationClosed && (
+            <a
+              href="#pendaftaran"
+              className="inline-flex items-center gap-2 rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800"
+            >
+              Daftar Sekarang
+            </a>
+          )}
+          <a
+            href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-green-700 hover:text-green-700"
+          >
+            <Share2 size={16} />
+            Share
+          </a>
+        </div>
       </div>
 
       <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
@@ -111,7 +126,10 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
           {agenda.description}
         </p>
 
-        <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+        <div
+          id="pendaftaran"
+          className="mt-10 scroll-mt-24 rounded-3xl border border-slate-200 bg-slate-50 p-6"
+        >
           <p className="text-sm font-semibold text-slate-900">Informasi pendaftaran</p>
           <div className="mt-3 space-y-2 text-sm text-slate-700">
             <p>
