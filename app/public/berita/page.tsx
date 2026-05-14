@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Search } from "lucide-react";
+import { Search, Newspaper } from "lucide-react";
 
 type BeritaPageProps = {
   searchParams?: Promise<{
@@ -101,7 +101,19 @@ export default async function BeritaPage({ searchParams }: BeritaPageProps) {
               href={`/public/berita/${item.slug}`}
               className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="h-48 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500" />
+              <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-emerald-500">
+                {item.coverImage ? (
+                  <img
+                    src={item.coverImage}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center opacity-40">
+                    <Newspaper size={48} className="text-white" />
+                  </div>
+                )}
+              </div>
               <div className="p-6">
                 <p className="text-sm text-slate-500">
                   {format(item.publishedAt ?? item.createdAt, "dd MMMM yyyy", {

@@ -101,6 +101,7 @@ export default async function HomePage() {
       description: item.excerpt ?? "Baca selengkapnya untuk detail berita.",
       date: item.publishedAt ?? item.createdAt,
       href: `/public/berita/${item.slug}`,
+      coverImage: item.coverImage,
     })),
     ...upcomingAgendas.map((item) => ({
       key: `agenda-${item.id}`,
@@ -283,7 +284,23 @@ export default async function HomePage() {
               href={item.href}
               className="group w-[88%] flex-none snap-start overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:w-[420px]"
             >
-              <div className="h-40 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500" />
+              <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-emerald-500">
+                {"coverImage" in item && item.coverImage ? (
+                  <img
+                    src={item.coverImage}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center opacity-40">
+                    {item.kind === "news" ? (
+                      <Newspaper size={40} className="text-white" />
+                    ) : (
+                      <CalendarDays size={40} className="text-white" />
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="p-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
@@ -385,7 +402,19 @@ export default async function HomePage() {
               href={`/public/berita/${item.slug}`}
               className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="h-52 bg-gradient-to-br from-green-900 via-green-700 to-emerald-500" />
+              <div className="relative h-52 w-full overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-emerald-500">
+                {item.coverImage ? (
+                  <img
+                    src={item.coverImage}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center opacity-40">
+                    <Newspaper size={48} className="text-white" />
+                  </div>
+                )}
+              </div>
               <div className="p-6">
                 <p className="text-sm text-slate-500">
                   {format(item.publishedAt ?? item.createdAt, "dd MMMM yyyy", {
