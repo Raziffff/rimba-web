@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import slugify from "slugify";
-import { Loader2, Save, X, Image as ImageIcon } from "lucide-react";
+import { Loader2, Save, X, Image as ImageIcon, Sparkles, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +24,9 @@ interface NewsFormProps {
 
 export default function NewsForm({ initialData, id }: NewsFormProps) {
   const [loading, setLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedCaption, setGeneratedCaption] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
   const router = useRouter();
 
   const {
@@ -43,8 +46,43 @@ export default function NewsForm({ initialData, id }: NewsFormProps) {
   });
 
   const title = watch("title");
+  const content = watch("content");
   const coverImage = watch("coverImage");
   const isPublished = watch("isPublished");
+
+  const generateAICaption = async () => {
+    if (!title || !content) {
+      toast.error("Mohon isi judul dan konten berita terlebih dahulu");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch("/api/ai/generate-caption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content, type: "news" }),
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        toast.error(data.error);
+      } else {
+        setGeneratedCaption(data.caption);
+      }
+    } catch (error) {
+      toast.error("Gagal terhubung ke layanan AI");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedCaption);
+    setIsCopied(true);
+    toast.success("Caption berhasil disalin!");
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const generateSlug = () => {
     if (title) {
@@ -86,10 +124,51 @@ export default function NewsForm({ initialData, id }: NewsFormProps) {
         <div className="lg:col-span-2 space-y-8">
           <Card className="rounded-3xl border-slate-200 shadow-sm">
             <CardHeader>
-              <CardTitle>Konten Berita</CardTitle>
-              <CardDescription>Tulis isi berita Anda di sini.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Konten Berita</CardTitle>
+                  <CardDescription>Tulis isi berita Anda di sini.</CardDescription>
+                </div>
+                
+                <div className="flex gap-2">
+                  {generatedCaption && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={copyToClipboard}
+                      className="rounded-full border-green-200 text-green-700 hover:bg-green-50"
+                    >
+                      {isCopied ? <Check size={14} className="mr-2" /> : <Copy size={14} className="mr-2" />}
+                      {isCopied ? "Tersalin" : "Salin Caption AI"}
+                    </Button>
+                  )}
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateAICaption}
+                    disabled={isGenerating}
+                    className="rounded-full border-green-700 text-green-700 hover:bg-green-700 hover:text-white"
+                  >
+                    {isGenerating ? (
+                      <Loader2 size={14} className="mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles size={14} className="mr-2" />
+                    )}
+                    {isGenerating ? "Menganalisis..." : "Generate Caption AI"}
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {generatedCaption && (
+                <div className="mb-6 rounded-2xl bg-green-50/50 p-4 border border-green-100">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-green-700">Hasil AI Caption:</p>
+                  <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{generatedCaption}</p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="title">Judul Berita</Label>
                 <Input
