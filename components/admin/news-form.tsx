@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { newsSchema, type NewsInput } from "@/lib/validations";
-import { createNews, updateNews } from "@/app/admin/berita/actions";
+import { createNews, updateNews, uploadNewsImage } from "@/app/admin/berita/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,9 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import slugify from "slugify";
-import { Loader2, Save, X, Image as ImageIcon, Sparkles, Copy, Check } from "lucide-react";
+import { Loader2, Save, X, Image as ImageIcon, Sparkles, Copy, Check, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useRef } from "react";
 
 interface NewsFormProps {
   initialData?: NewsInput;
@@ -25,8 +26,10 @@ interface NewsFormProps {
 export default function NewsForm({ initialData, id }: NewsFormProps) {
   const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [generatedCaption, setGeneratedCaption] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const {
@@ -49,6 +52,48 @@ export default function NewsForm({ initialData, id }: NewsFormProps) {
   const content = watch("content");
   const coverImage = watch("coverImage");
   const isPublished = watch("isPublished");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await uploadNewsImage(formData);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (!result?.publicUrl) {
+        toast.error("Gagal mendapatkan URL gambar.");
+        return;
+      }
+
+      setValue("coverImage", result.publicUrl, { shouldValidate: true });
+      toast.success("Gambar berhasil diunggah!");
+    } catch (error) {
+      const err = error as Error;
+      console.error("Error uploading image:", err);
+      toast.error("Gagal mengunggah gambar: " + (err.message || "Terjadi kesalahan"));
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   const generateAICaption = async () => {
     if (!title || !content) {
@@ -101,13 +146,13 @@ export default function NewsForm({ initialData, id }: NewsFormProps) {
         result = await createNews(data);
       }
 
-      if (result?.error) {
-        toast.error(result.error);
-        setLoading(false);
-      } else {
+      if (result?.success) {
         toast.success(id ? "Berita diperbarui!" : "Berita berhasil dibuat!");
         router.push("/admin/berita");
         router.refresh();
+      } else if (result?.error) {
+        toast.error(result.error);
+        setLoading(false);
       }
     } catch (e) {
       if ((e as Error).message === "NEXT_REDIRECT") {
@@ -256,32 +301,59 @@ export default function NewsForm({ initialData, id }: NewsFormProps) {
               </div>
 
               <div className="space-y-2 pt-4 border-t border-slate-100">
-                <Label htmlFor="coverImage">URL Gambar Sampul (Optional)</Label>
+                <Label>Gambar Sampul</Label>
                 <div className="space-y-4">
-                  <Input
-                    id="coverImage"
-                    {...register("coverImage")}
-                    placeholder="https://example.com/image.jpg"
-                    className="rounded-xl border-slate-300"
-                  />
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 transition-colors hover:border-green-500 hover:bg-green-50/30"
+                  >
+                    <input
+                      type="file"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept="image/*"
+                      disabled={uploading}
+                    />
+                    {uploading ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+                    ) : (
+                      <Upload className="h-8 w-8 text-slate-400" />
+                    )}
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-slate-700">Klik untuk pilih gambar</p>
+                      <p className="text-xs text-slate-500">Maksimal 5MB (JPG, PNG, WEBP)</p>
+                    </div>
+                  </div>
+
+                  <input type="hidden" {...register("coverImage")} />
                   
                   {coverImage && (
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-200">
+                    <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 group">
                       <img 
                         src={coverImage} 
                         alt="Preview" 
                         className="h-full w-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
                       />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button 
+                          type="button" 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => setValue("coverImage", "", { shouldValidate: true })}
+                          className="rounded-full"
+                        >
+                          <X size={14} className="mr-2" />
+                          Hapus Gambar
+                        </Button>
+                      </div>
                     </div>
                   )}
 
-                  {!coverImage && (
+                  {!coverImage && !uploading && (
                     <div className="flex aspect-video flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-400">
                       <ImageIcon size={32} strokeWidth={1.5} />
-                      <p className="mt-2 text-xs">Belum ada gambar</p>
+                      <p className="mt-2 text-xs">Belum ada gambar terpilih</p>
                     </div>
                   )}
                 </div>
