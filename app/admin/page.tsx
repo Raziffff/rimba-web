@@ -101,14 +101,14 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 w-full">
       <PageHeader
         eyebrow="Dashboard Admin"
         title={`Selamat datang, ${session.user.name ?? "Admin"}`}
         description="Kelola konten website organisasi mulai dari berita, agenda, galeri, hingga pengaturan informasi situs."
       />
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((item) => (
           <StatCard
             key={item.title}
@@ -120,12 +120,12 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3 w-full">
         <SectionCard
           title="Aksi Cepat"
           description="Masuk ke menu penting dashboard untuk mulai mengelola website."
         >
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 w-full">
             <Link
               href="/admin/berita"
               className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-green-300 hover:bg-green-50"
@@ -203,7 +203,7 @@ export default async function AdminDashboardPage() {
           </div>
         </SectionCard>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 w-full">
         <SectionCard
           title="Agenda Mendatang"
           description="Daftar kegiatan organisasi dalam waktu dekat."
