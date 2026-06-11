@@ -15,7 +15,6 @@ const quickQuestions = [
   { label: "Agenda terdekat", text: "Agenda terdekat apa?" },
   { label: "Lokasi kegiatan", text: "Lokasi kegiatan biasanya di mana?" },
   { label: "Berita terbaru", text: "Berita terbaru apa?" },
-  { label: "Program", text: "Program/kegiatan RIMBA apa saja?" },
   { label: "Kontak", text: "Kontak RIMBA di mana?" },
 ];
 
@@ -27,7 +26,7 @@ export default function ChatWidget() {
     {
       role: "assistant",
       content:
-        "Halo! Saya Tanya RIMBA. Silakan tanya seputar agenda, berita, program, atau kontak.",
+        "Halo! Saya Tanya RIMBA. Silakan tanya seputar agenda, berita, atau kontak.",
     },
   ]);
 

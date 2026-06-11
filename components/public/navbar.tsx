@@ -9,7 +9,6 @@ const navItems = [
   { href: "/public", label: "Beranda" },
   { href: "/public/agenda", label: "Agenda" },
   { href: "/public/tentang", label: "Tentang" },
-  { href: "/public/program", label: "Program" },
   { href: "/public/berita", label: "Berita" },
   { href: "/public/galeri", label: "Galeri" },
   { href: "/public/kontak", label: "Kontak" },

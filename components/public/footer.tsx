@@ -18,7 +18,7 @@ export default function Footer() {
 
           <p className="text-sm leading-7 text-slate-600">
             Website resmi organisasi remaja masjid untuk informasi kegiatan,
-            berita, program, galeri, dan komunikasi dengan masyarakat.
+            berita, galeri, dan komunikasi dengan masyarakat.
           </p>
         </div>
 
@@ -32,9 +32,6 @@ export default function Footer() {
             </Link>
             <Link href="/public/tentang" className="hover:text-green-700">
               Tentang
-            </Link>
-            <Link href="/public/program" className="hover:text-green-700">
-              Program
             </Link>
             <Link href="/public/berita" className="hover:text-green-700">
               Berita

@@ -66,3 +66,12 @@ export const memberSchema = z.object({
 });
 
 export type MemberInput = z.infer<typeof memberSchema>;
+
+export const programSchema = z.object({
+  title: z.string().min(5, "Judul program minimal 5 karakter").max(200),
+  description: z.string().min(10, "Deskripsi program minimal 10 karakter"),
+  imageUrl: z.string().url("URL gambar tidak valid").optional().or(z.literal("")),
+  linkUrl: z.string().url("URL link tidak valid").optional().or(z.literal("")),
+});
+
+export type ProgramInput = z.infer<typeof programSchema>;

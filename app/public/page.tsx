@@ -137,8 +137,8 @@ export default async function HomePage() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full px-8 py-7 text-base">
-                <Link href="/public/program">
-                  Lihat Program
+                <Link href="/public/agenda">
+                  Lihat Agenda
                   <ArrowRight size={20} />
                 </Link>
               </Button>
@@ -166,7 +166,7 @@ export default async function HomePage() {
               <Card className="rounded-2xl border-slate-200 shadow-sm transition-all hover:shadow-md">
                 <CardContent className="p-4">
                   <p className="text-2xl font-bold text-slate-900">10+</p>
-                  <p className="mt-1 text-sm text-slate-500">Program Unggulan</p>
+                  <p className="mt-1 text-sm text-slate-500">Dokumentasi</p>
                 </CardContent>
               </Card>
             </div>
