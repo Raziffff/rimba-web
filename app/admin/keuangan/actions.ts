@@ -246,6 +246,9 @@ export async function generateFinancialReport(year: number) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
+  console.log("[AI Report] Starting for year:", year);
+  console.log("[AI Report] GROQ_API_KEY exists?", !!process.env.GROQ_API_KEY);
+
   const startDate = new Date(`${year}-01-01`);
   const endDate = new Date(`${year}-12-31`);
 
@@ -255,6 +258,8 @@ export async function generateFinancialReport(year: number) {
     },
     orderBy: { date: "asc" },
   });
+
+  console.log("[AI Report] Found transactions:", transactions.length);
 
   if (transactions.length === 0) {
     return { report: "Tidak ada data transaksi untuk tahun ini." };
@@ -279,35 +284,44 @@ export async function generateFinancialReport(year: number) {
     }))
   });
 
-  const groqClient = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-  });
+  console.log("[AI Report] Data prompt ready, calling Groq...");
 
-  const systemPrompt = `
-    Anda adalah Bendahara Organisasi Remaja Masjid Al-Barkah (RIMBA) yang profesional dan sopan.
-    Tugas Anda adalah membuat laporan keuangan tahunan dalam Bahasa Indonesia dengan format narasi yang jelas, formal, dan mudah dipahami.
-    Gunakan bahasa yang santai tapi tetap sopan.
-  `;
+  try {
+    const groqClient = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
 
-  const userPrompt = `
-    Berikut adalah data keuangan organisasi RIMBA tahun ${year}:
-    ${dataPrompt}
+    const systemPrompt = `
+      Anda adalah Bendahara Organisasi Remaja Masjid Al-Barkah (RIMBA) yang profesional dan sopan.
+      Tugas Anda adalah membuat laporan keuangan tahunan dalam Bahasa Indonesia dengan format narasi yang jelas, formal, dan mudah dipahami.
+      Gunakan bahasa yang santai tapi tetap sopan.
+    `;
 
-    Buatlah laporan narasi yang menjelaskan:
-    1. Ringkasan umum kondisi keuangan tahun ini
-    2. Analisis perbandingan pemasukan dan pengeluaran
-    3. Kategori transaksi terbesar
-    4. Kesimpulan dan saran singkat (jika ada)
-  `;
+    const userPrompt = `
+      Berikut adalah data keuangan organisasi RIMBA tahun ${year}:
+      ${dataPrompt}
 
-  const completion = await groqClient.chat.completions.create({
-    model: "llama-3.1-70b-versatile",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    temperature: 0.7,
-  });
+      Buatlah laporan narasi yang menjelaskan:
+      1. Ringkasan umum kondisi keuangan tahun ini
+      2. Analisis perbandingan pemasukan dan pengeluaran
+      3. Kategori transaksi terbesar
+      4. Kesimpulan dan saran singkat (jika ada)
+    `;
 
-  return { report: completion.choices[0]?.message?.content || "Gagal menghasilkan laporan." };
+    const completion = await groqClient.chat.completions.create({
+      model: "llama-3.1-70b-versatile",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.7,
+    });
+
+    console.log("[AI Report] Groq response received!");
+
+    return { report: completion.choices[0]?.message?.content || "Gagal menghasilkan laporan." };
+  } catch (error) {
+    console.error("[AI Report] Error calling Groq:", error);
+    return { report: `Terjadi kesalahan: ${error instanceof Error ? error.message : "Unknown error"}` };
+  }
 }
