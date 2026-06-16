@@ -98,103 +98,136 @@ export async function importTransactions(base64File: string) {
 
   try {
     const buffer = Buffer.from(base64File, "base64");
-    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, cellNF: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: "dd/mm/yyyy" });
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    // Helper untuk parsing tanggal dd/mm/yyyy
+    if (data.length < 2) {
+      return { error: "File Excel kosong atau tidak sesuai format!" };
+    }
+    const headers = data[0] as string[];
+    console.log("Headers:", headers);
+
+    const headerMap = new Map();
+    headers.forEach((h, i) => {
+      headerMap.set(h?.trim()?.toLowerCase(), i);
+    });
+
+    const tanggalIdx = headerMap.get("tanggal");
+    const tipeIdx = headerMap.get("tipe");
+    const kategoriIdx = headerMap.get("kategori");
+    const jumlahIdx = headerMap.get("jumlah");
+    const deskripsiIdx = headerMap.get("deskripsi");
+
+    if (tanggalIdx === undefined || tipeIdx === undefined || jumlahIdx === undefined) {
+      return { error: "Header kolom tidak sesuai! Pastikan ada: Tanggal, Tipe, Jumlah!" };
+    }
+
+    // Helper untuk parsing tanggal
     const parseDate = (dateValue: any): Date | null => {
       if (!dateValue) return null;
       if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
         return dateValue;
       }
       const dateStr = String(dateValue);
-      const parts = dateStr.split("/");
-      if (parts.length !== 3) {
-        const partsDash = dateStr.split("-");
-        if (partsDash.length === 3) {
-          parts.push(...partsDash);
-        } else {
-          return null;
+      
+      // Coba format dd/mm/yyyy atau dd-mm-yyyy
+      const separators = ["/", "-"];
+      for (const sep of separators) {
+        const parts = dateStr.split(sep);
+        if (parts.length === 3) {
+          const day = parseInt(parts[0]);
+          const month = parseInt(parts[1]) - 1; // bulan 0-11
+          const year = parseInt(parts[2]);
+          const date = new Date(year, month, day);
+          if (!isNaN(date.getTime())) {
+            return date;
+          }
         }
       }
-      let day, month, year;
-      if (parts.length === 3) {
-        day = parseInt(parts[0]);
-        month = parseInt(parts[1]) - 1;
-        year = parseInt(parts[2]);
-      } else {
-        day = parseInt(parts[0]);
-        month = parseInt(parts[1]) - 1;
-        year = parseInt(parts[2]);
+      
+      // Coba format ISO atau lainnya
+      const dateFromString = new Date(dateStr);
+      if (!isNaN(dateFromString.getTime())) {
+        return dateFromString;
       }
-      const date = new Date(year, month, day);
-      return isNaN(date.getTime()) ? null : date;
+      return null;
     };
 
-    console.log("Data parsed from Excel:", data);
+    let importedCount = 0;
+    let errorCount = 0;
 
     // Validasi dan simpan data satu per satu
-    for (const row of data) {
-      const rowTyped = row as {
-        Tanggal?: any;
-        Tipe?: string;
-        Kategori?: string;
-        Jumlah?: number;
-        Deskripsi?: string;
-      };
-      console.log("Processing row:", rowTyped);
-      const tanggal = parseDate(rowTyped.Tanggal);
-      const tipe = rowTyped.Tipe === "Pemasukan" ? "INCOME" : "EXPENSE";
-      const kategori = rowTyped.Kategori || "Lainnya";
-      const jumlah = Number(rowTyped.Jumlah);
-      const deskripsi = rowTyped.Deskripsi || "-";
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      console.log("Processing row:", row);
+      const tanggalValue = row[tanggalIdx];
+      const tipeValue = row[tipeIdx];
+      const kategoriValue = row[kategoriIdx];
+      const jumlahValue = row[jumlahIdx];
+      const deskripsiValue = row[deskripsiIdx];
 
-      if (tanggal && !isNaN(jumlah)) {
-        await prisma.financialTransaction.create({
-          data: {
-            date: tanggal,
-            type: tipe,
-            category: kategori,
-            amount: jumlah,
-            description: deskripsi,
-          },
-        });
+      const tanggal = parseDate(tanggalValue);
+      if (!tanggal) {
+        console.error("Invalid date at row", i + 1, ":", tanggalValue);
+        errorCount++;
+        continue;
       }
+
+      let tipe;
+      if (String(tipeValue).toLowerCase() === "pemasukan" || String(tipeValue).toUpperCase() === "INCOME") {
+        tipe = "INCOME";
+      } else {
+        tipe = "EXPENSE";
+      }
+
+      const kategori = kategoriValue ? String(kategoriValue).trim() : "Lainnya";
+      const jumlah = Number(jumlahValue);
+      const deskripsi = deskripsiValue ? String(deskripsiValue).trim() : "-";
+
+      if (isNaN(jumlah) || jumlah <= 0) {
+        console.error("Invalid amount at row", i + 1, ":", jumlahValue);
+        errorCount++;
+        continue;
+      }
+
+      await prisma.financialTransaction.create({
+        data: {
+          date: tanggal,
+          type: tipe,
+          category: kategori,
+          amount: jumlah,
+          description: deskripsi,
+        },
+      });
+      importedCount++;
+    }
+
+    if (importedCount === 0) {
+      return { error: "Tidak ada data yang berhasil diimport! Periksa format tanggal dan jumlah!" };
     }
 
     revalidatePath("/admin/keuangan");
     revalidatePath("/admin");
-    return { success: true };
+    return { success: true, message: `Berhasil import ${importedCount} data! ${errorCount > 0 ? `${errorCount} data gagal` : ""}` };
   } catch (error) {
     console.error("Failed to import transactions error:", error);
-    return { error: "Gagal mengimport data. Periksa format file!" };
+    return { error: `Gagal mengimport data: ${error instanceof Error ? error.message : "Periksa format file!"}` };
   }
 }
 
 // Fungsi untuk Download Template Excel
 export async function downloadTemplate() {
   const templateData = [
-    {
-      Tanggal: "15/01/2024",
-      Tipe: "Pemasukan",
-      Kategori: "Donasi",
-      Jumlah: 1000000,
-      Deskripsi: "Donasi dari Pak Ahmad"
-    },
-    {
-      Tanggal: "18/01/2024",
-      Tipe: "Pengeluaran",
-      Kategori: "Acara",
-      Jumlah: 350000,
-      Deskripsi: "Beli snack untuk kajian"
-    }
+    ["Tanggal", "Tipe", "Kategori", "Jumlah", "Deskripsi"],
+    ["15/01/2024", "Pemasukan", "Donasi", 1000000, "Donasi dari Pak Ahmad"],
+    ["18/01/2024", "Pengeluaran", "Acara", 350000, "Beli snack untuk kajian"],
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const worksheet = XLSX.utils.aoa_to_sheet(templateData);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Template Laporan Keuangan");
   const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
   const base64 = buffer.toString("base64");
 

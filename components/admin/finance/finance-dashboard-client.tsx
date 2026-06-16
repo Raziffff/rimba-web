@@ -111,7 +111,7 @@ export default function FinanceDashboardClient({
           if (result?.error) {
             toast.error(result.error);
           } else {
-            toast.success("Berhasil mengimport data!");
+            toast.success(result.message || "Berhasil mengimport data!");
             router.refresh();
           }
         } catch (error) {
