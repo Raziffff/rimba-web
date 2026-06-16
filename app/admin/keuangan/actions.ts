@@ -99,7 +99,7 @@ export async function importTransactions(base64File: string) {
     const worksheet = workbook.Sheets[sheetName];
     
     // Baca sebagai array of array (lebih reliable)
-    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
     console.log("All rows from Excel:", rows);
 
@@ -111,8 +111,10 @@ export async function importTransactions(base64File: string) {
     const headers = rows[0] as string[];
     const headerIndex: Record<string, number> = {};
     headers.forEach((header, idx) => {
-      const key = header.toLowerCase().trim();
-      headerIndex[key] = idx;
+      if (header) {
+        const key = header.toLowerCase().trim();
+        headerIndex[key] = idx;
+      }
     });
 
     console.log("Header index:", headerIndex);
@@ -139,12 +141,13 @@ export async function importTransactions(base64File: string) {
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
+      if (!row || row.length === 0) continue; // Skip baris kosong
       
       let tanggal: Date | null = null;
       const tglValue = row[tanggalIdx];
       if (tglValue instanceof Date) {
         tanggal = tglValue;
-      } else {
+      } else if (tglValue) {
         const tglStr = String(tglValue);
         const parts = tglStr.split(/[\/\-]/);
         if (parts.length === 3) {
@@ -165,24 +168,27 @@ export async function importTransactions(base64File: string) {
       }
 
       let tipe: "INCOME" | "EXPENSE" = "INCOME";
-      const tipeValue = String(row[tipeIdx]).toLowerCase().trim();
-      if (tipeValue === "pengeluaran" || tipeValue === "expense") {
-        tipe = "EXPENSE";
+      const tipeCell = row[tipeIdx];
+      if (tipeCell) {
+        const tipeValue = String(tipeCell).toLowerCase().trim();
+        if (tipeValue === "pengeluaran" || tipeValue === "expense") {
+          tipe = "EXPENSE";
+        }
       }
 
-      const kategoriValue = row[kategoriIdx];
-      const kategori = kategoriValue ? String(kategoriValue).trim() : "Lainnya";
+      const kategoriCell = row[kategoriIdx];
+      const kategori = kategoriCell ? String(kategoriCell).trim() : "Lainnya";
 
-      const jumlahValue = row[jumlahIdx];
-      const jumlah = Number(jumlahValue);
+      const jumlahCell = row[jumlahIdx];
+      const jumlah = Number(jumlahCell);
       if (isNaN(jumlah) || jumlah <= 0) {
-        console.error(`Invalid amount at row ${i + 1}:`, jumlahValue);
+        console.error(`Invalid amount at row ${i + 1}:`, jumlahCell);
         errorCount++;
         continue;
       }
 
-      const deskripsiValue = row[deskripsiIdx];
-      const deskripsi = deskripsiValue ? String(deskripsiValue).trim() : "-";
+      const deskripsiCell = row[deskripsiIdx];
+      const deskripsi = deskripsiCell ? String(deskripsiCell).trim() : "-";
 
       await prisma.financialTransaction.create({
         data: {
