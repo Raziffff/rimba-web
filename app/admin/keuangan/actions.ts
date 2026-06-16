@@ -84,19 +84,21 @@ export async function exportTransactions(year?: number) {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
 
-  // Konversi ke buffer
+  // Konversi ke base64 string
   const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+  const base64 = buffer.toString("base64");
 
-  return Buffer.from(buffer);
+  return { base64, filename: `Laporan_Keuangan_RIMBA_${year || new Date().getFullYear()}.xlsx` };
 }
 
 // Fungsi untuk Import Excel
-export async function importTransactions(fileData: Buffer) {
+export async function importTransactions(base64File: string) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
   try {
-    const workbook = XLSX.read(fileData, { type: "buffer" });
+    const buffer = Buffer.from(base64File, "base64");
+    const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
@@ -134,6 +136,34 @@ export async function importTransactions(fileData: Buffer) {
     console.error("Failed to import transactions:", error);
     return { error: "Gagal mengimport data. Periksa format file!" };
   }
+}
+
+// Fungsi untuk Download Template Excel
+export async function downloadTemplate() {
+  const templateData = [
+    {
+      Tanggal: "15/01/2024",
+      Tipe: "Pemasukan",
+      Kategori: "Donasi",
+      Jumlah: 1000000,
+      Deskripsi: "Donasi dari Pak Ahmad"
+    },
+    {
+      Tanggal: "18/01/2024",
+      Tipe: "Pengeluaran",
+      Kategori: "Acara",
+      Jumlah: 350000,
+      Deskripsi: "Beli snack untuk kajian"
+    }
+  ];
+
+  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
+  const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+  const base64 = buffer.toString("base64");
+
+  return { base64, filename: "Template_Laporan_Keuangan_RIMBA.xlsx" };
 }
 
 // Fungsi untuk Generate Laporan AI

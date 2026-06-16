@@ -16,8 +16,8 @@ import {
   exportTransactions,
   importTransactions,
   generateFinancialReport,
+  downloadTemplate,
 } from "@/app/admin/keuangan/actions";
-import * as XLSX from "xlsx";
 
 type Props = {
   allTransactions: { amount: number; type: "INCOME" | "EXPENSE"; date: Date }[];
@@ -60,19 +60,39 @@ export default function FinanceDashboardClient({
     setAiReport(null);
   };
 
-  const handleExport = async () => {
-    const buffer = await exportTransactions(selectedYear);
-    if (buffer) {
-      const url = window.URL.createObjectURL(
-        new Blob([buffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        })
-      );
-      const a = document.createElement("a");
+  const handleDownloadTemplate = async () => {
+    try {
+      const result = await downloadTemplate();
+      const blob = new Blob([Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `Laporan_Keuangan_RIMBA_${selectedYear}.xlsx`;
+      a.download = result.filename;
       a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Template berhasil diunduh!");
+    } catch (error) {
+      toast.error("Gagal mengunduh template.");
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const result = await exportTransactions(selectedYear);
+      const blob = new Blob([Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
       toast.success("Berhasil mengunduh laporan!");
+    } catch (error) {
+      toast.error("Gagal mengunduh laporan.");
     }
   };
 
@@ -81,13 +101,21 @@ export default function FinanceDashboardClient({
     if (file) {
       const reader = new FileReader();
       reader.onload = async (event) => {
-        const buffer = event.target?.result as ArrayBuffer;
-        const result = await importTransactions(Buffer.from(buffer));
-        if (result?.error) {
-          toast.error(result.error);
-        } else {
-          toast.success("Berhasil mengimport data!");
-          router.refresh();
+        try {
+          const arrayBuffer = event.target?.result as ArrayBuffer;
+          const base64 = btoa(
+            new Uint8Array(arrayBuffer)
+              .reduce((data, byte) => data + String.fromCharCode(byte), '')
+          );
+          const result = await importTransactions(base64);
+          if (result?.error) {
+            toast.error(result.error);
+          } else {
+            toast.success("Berhasil mengimport data!");
+            router.refresh();
+          }
+        } catch (error) {
+          toast.error("Gagal mengimport data.");
         }
       };
       reader.readAsArrayBuffer(file);
@@ -125,31 +153,6 @@ export default function FinanceDashboardClient({
   ).sort((a, b) => a - b);
   if (!availableYears.includes(currentYear)) availableYears.push(currentYear);
 
-  const downloadTemplate = () => {
-    const templateData = [
-      {
-        Tanggal: "15/01/2024",
-        Tipe: "Pemasukan",
-        Kategori: "Donasi",
-        Jumlah: 1000000,
-        Deskripsi: "Donasi dari Pak Ahmad"
-      },
-      {
-        Tanggal: "18/01/2024",
-        Tipe: "Pengeluaran",
-        Kategori: "Acara",
-        Jumlah: 350000,
-        Deskripsi: "Beli snack untuk kajian"
-      }
-    ];
-    
-    const worksheet = XLSX.utils.json_to_sheet(templateData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
-    XLSX.writeFile(workbook, "Template_Laporan_Keuangan_RIMBA.xlsx");
-    toast.success("Template berhasil diunduh!");
-  };
-
   return (
     <section className="space-y-8 pb-20">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -168,7 +171,7 @@ export default function FinanceDashboardClient({
           </select>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={downloadTemplate} variant="outline" size="sm">
+          <Button onClick={handleDownloadTemplate} variant="outline" size="sm">
             <FileSpreadsheet size={16} className="mr-2" />
             Unduh Template
           </Button>
