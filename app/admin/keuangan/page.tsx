@@ -2,12 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import PageHeader from "@/components/admin/page-header";
-import SectionCard from "@/components/admin/section-card";
-import SummaryCards from "@/components/admin/finance/summary-cards";
-import TransactionTable, { type Transaction as FinanceTransaction } from "@/components/admin/finance/transaction-table";
-import TransactionForm from "@/components/admin/finance/transaction-form";
-import FinanceChart from "@/components/admin/finance/finance-chart";
 import { TransactionType } from "@prisma/client";
+import FinanceDashboardClient from "@/components/admin/finance/finance-dashboard-client";
 
 export default async function AdminKeuanganPage() {
   const session = await auth();
@@ -55,47 +51,19 @@ export default async function AdminKeuanganPage() {
     }));
 
   return (
-    <section className="space-y-8 pb-20">
+    <>
       <PageHeader
         eyebrow="Keuangan Organisasi"
         title="Laporan Keuangan"
         description="Pantau arus kas masuk dan keluar organisasi RIMBA secara transparan."
       />
-
-      <SummaryCards 
-        totalIncome={totalIncome} 
-        totalExpense={totalExpense} 
+      <FinanceDashboardClient
+        allTransactions={allTransactions}
+        transactions={transactions}
+        yearlyData={yearlyData}
+        totalIncome={totalIncome}
+        totalExpense={totalExpense}
       />
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
-          <SectionCard
-            title="Ringkasan Tahunan"
-            description="Diagram pemasukan dan pengeluaran per tahun untuk melihat tren kas."
-          >
-            <div className="mt-4">
-              <FinanceChart data={yearlyData} />
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            title="Riwayat Transaksi"
-            description="Daftar transaksi terbaru yang dicatat oleh bendahara."
-          >
-            <div className="mt-4 sm:-mx-6">
-              <TransactionTable 
-                transactions={transactions as unknown as FinanceTransaction[]} 
-              />
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="lg:col-span-1">
-          <div className="sticky top-8">
-            <TransactionForm />
-          </div>
-        </div>
-      </div>
-    </section>
+    </>
   );
 }

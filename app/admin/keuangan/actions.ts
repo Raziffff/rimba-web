@@ -5,6 +5,8 @@ import { transactionSchema, type TransactionInput } from "../../../lib/validatio
 import { auth } from "../../../lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import * as XLSX from "xlsx";
+import Groq from "groq-sdk";
 
 export async function createTransaction(data: TransactionInput) {
   const session = await auth();
@@ -47,4 +49,163 @@ export async function deleteTransaction(id: string) {
     console.error("Failed to delete transaction:", error);
     return { error: "Gagal menghapus transaksi." };
   }
+}
+
+// Fungsi untuk Export Excel
+export async function exportTransactions(year?: number) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  let whereClause = {};
+  if (year) {
+    whereClause = {
+      date: {
+        gte: new Date(`${year}-01-01`),
+        lte: new Date(`${year}-12-31`),
+      },
+    };
+  }
+
+  const transactions = await prisma.financialTransaction.findMany({
+    where: whereClause,
+    orderBy: { date: "asc" },
+  });
+
+  // Mapping data ke format Excel
+  const dataForExcel = transactions.map((t) => ({
+    Tanggal: new Date(t.date).toLocaleDateString("id-ID"),
+    Tipe: t.type === "INCOME" ? "Pemasukan" : "Pengeluaran",
+    Kategori: t.category,
+    Jumlah: t.amount,
+    Deskripsi: t.description,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
+
+  // Konversi ke buffer
+  const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+  return Buffer.from(buffer);
+}
+
+// Fungsi untuk Import Excel
+export async function importTransactions(fileData: Buffer) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  try {
+    const workbook = XLSX.read(fileData, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    // Validasi dan simpan data satu per satu
+    for (const row of data) {
+      // @ts-ignore
+      const tanggal = new Date(row.Tanggal);
+      // @ts-ignore
+      const tipe = row.Tipe === "Pemasukan" ? "INCOME" : "EXPENSE";
+      // @ts-ignore
+      const kategori = row.Kategori || "Lainnya";
+      // @ts-ignore
+      const jumlah = Number(row.Jumlah);
+      // @ts-ignore
+      const deskripsi = row.Deskripsi || "-";
+
+      if (!isNaN(tanggal.getTime()) && !isNaN(jumlah)) {
+        await prisma.financialTransaction.create({
+          data: {
+            date: tanggal,
+            type: tipe,
+            category: kategori,
+            amount: jumlah,
+            description: deskripsi,
+          },
+        });
+      }
+    }
+
+    revalidatePath("/admin/keuangan");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to import transactions:", error);
+    return { error: "Gagal mengimport data. Periksa format file!" };
+  }
+}
+
+// Fungsi untuk Generate Laporan AI
+export async function generateFinancialReport(year: number) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const startDate = new Date(`${year}-01-01`);
+  const endDate = new Date(`${year}-12-31`);
+
+  const transactions = await prisma.financialTransaction.findMany({
+    where: {
+      date: { gte: startDate, lte: endDate },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  if (transactions.length === 0) {
+    return { report: "Tidak ada data transaksi untuk tahun ini." };
+  }
+
+  // Hitung total
+  const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((sum, t) => sum + t.amount, 0);
+  const netBalance = totalIncome - totalExpense;
+
+  // Ambil data untuk AI
+  const dataPrompt = JSON.stringify({
+    tahun: year,
+    totalPemasukan: totalIncome,
+    totalPengeluaran: totalExpense,
+    saldoAkhir: netBalance,
+    jumlahTransaksi: transactions.length,
+    transaksi: transactions.map(t => ({
+      tanggal: new Date(t.date).toLocaleDateString("id-ID"),
+      tipe: t.type,
+      kategori: t.category,
+      jumlah: t.amount,
+      deskripsi: t.description
+    }))
+  });
+
+  // Panggil Groq AI
+  const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+  });
+
+  const systemPrompt = `
+    Anda adalah Bendahara Organisasi Remaja Masjid Al-Barkah (RIMBA) yang profesional dan sopan.
+    Tugas Anda adalah membuat laporan keuangan tahunan dalam Bahasa Indonesia dengan format narasi yang jelas, formal, dan mudah dipahami.
+    Gunakan bahasa yang santai tapi tetap sopan.
+  `;
+
+  const userPrompt = `
+    Berikut adalah data keuangan organisasi RIMBA tahun ${year}:
+    ${dataPrompt}
+
+    Buatlah laporan narasi yang menjelaskan:
+    1. Ringkasan umum kondisi keuangan tahun ini
+    2. Analisis perbandingan pemasukan dan pengeluaran
+    3. Kategori transaksi terbesar
+    4. Kesimpulan dan saran singkat (jika ada)
+  `;
+
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.1-70b-versatile",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: 0.7,
+  });
+
+  return { report: completion.choices[0]?.message?.content || "Gagal menghasilkan laporan." };
 }
