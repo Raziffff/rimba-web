@@ -8,32 +8,6 @@ import { redirect } from "next/navigation";
 import * as XLSX from "xlsx";
 import Groq from "groq-sdk";
 
-// Helper untuk parsing tanggal
-function parseDate(dateValue: any): Date | null {
-  if (!dateValue) return null;
-  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
-    return dateValue;
-  }
-  const dateStr = String(dateValue);
-  
-  const separators = ["/", "-"];
-  for (const sep of separators) {
-    const parts = dateStr.split(sep);
-    if (parts.length === 3) {
-      const day = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1;
-      const year = parseInt(parts[2]);
-      const date = new Date(year, month, day);
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
-    }
-  }
-  
-  const dateFromString = new Date(dateStr);
-  return !isNaN(dateFromString.getTime()) ? dateFromString : null;
-}
-
 export async function createTransaction(data: TransactionInput) {
   const session = await auth();
 
@@ -123,103 +97,133 @@ export async function importTransactions(base64File: string) {
     const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+    
+    // Baca sebagai array of array (lebih reliable)
+    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    console.log("Data from Excel:", jsonData);
+    console.log("All rows from Excel:", rows);
+
+    if (rows.length < 2) {
+      return { error: "File Excel kosong atau tidak memiliki header." };
+    }
+
+    // Dapatkan index kolom dari header
+    const headers = rows[0] as string[];
+    const headerIndex: Record<string, number> = {};
+    headers.forEach((header, idx) => {
+      const key = header.toLowerCase().trim();
+      headerIndex[key] = idx;
+    });
+
+    console.log("Header index:", headerIndex);
+
+    // Cari kolom yang dibutuhkan
+    const tanggalIdx = headerIndex["tanggal"] ?? headerIndex["tgl"];
+    const tipeIdx = headerIndex["tipe"] ?? headerIndex["type"];
+    const kategoriIdx = headerIndex["kategori"] ?? headerIndex["category"];
+    const jumlahIdx = headerIndex["jumlah"] ?? headerIndex["amount"] ?? headerIndex["harga"];
+    const deskripsiIdx = headerIndex["deskripsi"] ?? headerIndex["description"] ?? headerIndex["keterangan"];
+
+    if (tanggalIdx === undefined) {
+      return { error: "Kolom 'Tanggal' tidak ditemukan di file Excel." };
+    }
+    if (tipeIdx === undefined) {
+      return { error: "Kolom 'Tipe' tidak ditemukan di file Excel." };
+    }
+    if (jumlahIdx === undefined) {
+      return { error: "Kolom 'Jumlah' tidak ditemukan di file Excel." };
+    }
 
     let importedCount = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < jsonData.length; i++) {
-      const item = jsonData[i];
-      console.log(`Processing item ${i + 1}:`, item);
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
       
-      let tgl: Date | null = null;
-      let tipe: "INCOME" | "EXPENSE" = "INCOME";
-      let kategori = "Lainnya";
-      let jumlah = 0;
-      let deskripsi = "-";
-      
-      for (const key of Object.keys(item)) {
-        const lowerKey = key.toLowerCase().trim();
-        const val = item[key];
-        
-        if (lowerKey.includes("tanggal") || lowerKey.includes("tgl")) {
-          tgl = parseDate(val);
-        } else if (lowerKey.includes("tipe") || lowerKey.includes("type")) {
-          const v = String(val).toLowerCase().trim();
-          tipe = v === "pengeluaran" || v === "expense" ? "EXPENSE" : "INCOME";
-        } else if (lowerKey.includes("kategori") || lowerKey.includes("category")) {
-          kategori = String(val).trim();
-        } else if (lowerKey.includes("jumlah") || lowerKey.includes("amount") || lowerKey.includes("harga")) {
-          jumlah = Number(val);
-        } else if (lowerKey.includes("deskripsi") || lowerKey.includes("description") || lowerKey.includes("keterangan")) {
-          deskripsi = String(val).trim();
+      let tanggal: Date | null = null;
+      const tglValue = row[tanggalIdx];
+      if (tglValue instanceof Date) {
+        tanggal = tglValue;
+      } else {
+        const tglStr = String(tglValue);
+        const parts = tglStr.split(/[\/\-]/);
+        if (parts.length === 3) {
+          const day = parseInt(parts[0]);
+          const month = parseInt(parts[1]) - 1;
+          const year = parseInt(parts[2]);
+          const date = new Date(year, month, day);
+          if (!isNaN(date.getTime())) {
+            tanggal = date;
+          }
         }
       }
-      
-      if (!tgl) {
-        console.error("Invalid date at item", i + 1);
+
+      if (!tanggal) {
+        console.error(`Invalid date at row ${i + 1}:`, tglValue);
         errorCount++;
         continue;
       }
-      
+
+      let tipe: "INCOME" | "EXPENSE" = "INCOME";
+      const tipeValue = String(row[tipeIdx]).toLowerCase().trim();
+      if (tipeValue === "pengeluaran" || tipeValue === "expense") {
+        tipe = "EXPENSE";
+      }
+
+      const kategoriValue = row[kategoriIdx];
+      const kategori = kategoriValue ? String(kategoriValue).trim() : "Lainnya";
+
+      const jumlahValue = row[jumlahIdx];
+      const jumlah = Number(jumlahValue);
       if (isNaN(jumlah) || jumlah <= 0) {
-        console.error("Invalid amount at item", i + 1);
+        console.error(`Invalid amount at row ${i + 1}:`, jumlahValue);
         errorCount++;
         continue;
       }
-      
+
+      const deskripsiValue = row[deskripsiIdx];
+      const deskripsi = deskripsiValue ? String(deskripsiValue).trim() : "-";
+
       await prisma.financialTransaction.create({
         data: {
-          date: tgl,
+          date: tanggal,
           type: tipe,
-          category: kategori || "Lainnya",
+          category: kategori,
           amount: jumlah,
-          description: deskripsi || "-",
+          description: deskripsi,
         },
       });
-      
+
       importedCount++;
     }
-    
-    if (importedCount === 0) {
-      return { error: "Tidak ada data yang berhasil diimport!" };
-    }
-    
+
     revalidatePath("/admin/keuangan");
     revalidatePath("/admin");
-    
-    return { 
-      success: true, 
-      message: `Berhasil import ${importedCount} data!${errorCount > 0 ? ` (${errorCount} gagal)` : ""}` 
+
+    if (importedCount === 0) {
+      return { error: "Tidak ada data yang berhasil diimport. Periksa format file!" };
+    }
+
+    return {
+      success: true,
+      message: `Berhasil import ${importedCount} data!${errorCount > 0 ? ` (${errorCount} data gagal)` : ""}`
     };
-    
   } catch (error) {
-    console.error("Import failed:", error);
-    return { error: `Gagal mengimport: ${error instanceof Error ? error.message : "File tidak sesuai"}` };
+    console.error("Import failed completely:", error);
+    return {
+      error: `Gagal mengimport file: ${error instanceof Error ? error.message : "Format file tidak didukung"}`
+    };
   }
 }
 
 export async function downloadTemplate() {
   const templateData = [
-    {
-      Tanggal: "15/01/2024",
-      Tipe: "Pemasukan",
-      Kategori: "Donasi",
-      Jumlah: 1000000,
-      Deskripsi: "Donasi dari Pak Ahmad"
-    },
-    {
-      Tanggal: "18/01/2024",
-      Tipe: "Pengeluaran",
-      Kategori: "Acara",
-      Jumlah: 350000,
-      Deskripsi: "Beli snack untuk kajian"
-    }
+    ["Tanggal", "Tipe", "Kategori", "Jumlah", "Deskripsi"],
+    ["15/01/2024", "Pemasukan", "Donasi", 1000000, "Donasi dari Pak Ahmad"],
+    ["18/01/2024", "Pengeluaran", "Acara", 350000, "Beli snack untuk kajian"],
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const worksheet = XLSX.utils.aoa_to_sheet(templateData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Template Laporan Keuangan");
   const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
