@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 export const metadata = {
   title: "RIMBA",
   description: "Website organisasi RIMBA",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
