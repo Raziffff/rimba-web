@@ -98,33 +98,54 @@ export async function importTransactions(base64File: string) {
 
   try {
     const buffer = Buffer.from(base64File, "base64");
-    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, cellNF: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: "dd/mm/yyyy" });
 
     // Helper untuk parsing tanggal dd/mm/yyyy
-    const parseDate = (dateStr: string) => {
-      if (!dateStr) return null;
+    const parseDate = (dateValue: any): Date | null => {
+      if (!dateValue) return null;
+      if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+        return dateValue;
+      }
+      const dateStr = String(dateValue);
       const parts = dateStr.split("/");
-      if (parts.length !== 3) return null;
-      const day = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1; // Bulan di JavaScript dimulai dari 0
-      const year = parseInt(parts[2]);
+      if (parts.length !== 3) {
+        const partsDash = dateStr.split("-");
+        if (partsDash.length === 3) {
+          parts.push(...partsDash);
+        } else {
+          return null;
+        }
+      }
+      let day, month, year;
+      if (parts.length === 3) {
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+        year = parseInt(parts[2]);
+      } else {
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+        year = parseInt(parts[2]);
+      }
       const date = new Date(year, month, day);
       return isNaN(date.getTime()) ? null : date;
     };
 
+    console.log("Data parsed from Excel:", data);
+
     // Validasi dan simpan data satu per satu
     for (const row of data) {
       const rowTyped = row as {
-        Tanggal?: string;
+        Tanggal?: any;
         Tipe?: string;
         Kategori?: string;
         Jumlah?: number;
         Deskripsi?: string;
       };
-      const tanggal = parseDate(rowTyped.Tanggal || "");
+      console.log("Processing row:", rowTyped);
+      const tanggal = parseDate(rowTyped.Tanggal);
       const tipe = rowTyped.Tipe === "Pemasukan" ? "INCOME" : "EXPENSE";
       const kategori = rowTyped.Kategori || "Lainnya";
       const jumlah = Number(rowTyped.Jumlah);
@@ -147,7 +168,7 @@ export async function importTransactions(base64File: string) {
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {
-    console.error("Failed to import transactions:", error);
+    console.error("Failed to import transactions error:", error);
     return { error: "Gagal mengimport data. Periksa format file!" };
   }
 }
