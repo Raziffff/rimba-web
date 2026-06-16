@@ -91,6 +91,76 @@ export async function exportTransactions(year?: number) {
   return { base64, filename: `Laporan_Keuangan_RIMBA_${year || new Date().getFullYear()}.xlsx` };
 }
 
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { TransactionType } from "@prisma/client";
+import * as XLSX from "xlsx";
+import { revalidatePath } from "next/cache";
+import { groq } from "@/lib/groq";
+
+// Helper untuk parsing tanggal
+function parseDate(dateValue: any): Date | null {
+  if (!dateValue) return null;
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    return dateValue;
+  }
+  const dateStr = String(dateValue);
+  
+  // Coba format dd/mm/yyyy atau dd-mm-yyyy
+  const separators = ["/", "-"];
+  for (const sep of separators) {
+    const parts = dateStr.split(sep);
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1; // bulan 0-11
+      const year = parseInt(parts[2]);
+      const date = new Date(year, month, day);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+  }
+  
+  // Coba format ISO atau lainnya
+  const dateFromString = new Date(dateStr);
+  if (!isNaN(dateFromString.getTime())) {
+    return dateFromString;
+  }
+  return null;
+}
+
+// Fungsi untuk Export Excel
+export async function exportTransactions(year: number) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const transactions = await prisma.financialTransaction.findMany({
+    where: {
+      date: {
+        gte: new Date(`${year}-01-01`),
+        lte: new Date(`${year}-12-31`)
+      }
+    },
+    orderBy: { date: "asc" }
+  });
+
+  const data = transactions.map(t => ({
+    Tanggal: t.date.toLocaleDateString('id-ID'),
+    Tipe: t.type === TransactionType.INCOME ? "Pemasukan" : "Pengeluaran",
+    Kategori: t.category,
+    Jumlah: t.amount,
+    Deskripsi: t.description
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
+  const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+  const base64 = buffer.toString("base64");
+
+  return { base64, filename: `Laporan_Keuangan_RIMBA_${year || new Date().getFullYear()}.xlsx` };
+}
+
 // Fungsi untuk Import Excel
 export async function importTransactions(base64File: string) {
   const session = await auth();
@@ -101,119 +171,83 @@ export async function importTransactions(base64File: string) {
     const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-    if (data.length < 2) {
-      return { error: "File Excel kosong atau tidak sesuai format!" };
-    }
-    const headers = data[0] as string[];
-    console.log("Headers:", headers);
-
-    const headerMap = new Map();
-    headers.forEach((h, i) => {
-      headerMap.set(h?.trim()?.toLowerCase(), i);
-    });
-
-    const tanggalIdx = headerMap.get("tanggal");
-    const tipeIdx = headerMap.get("tipe");
-    const kategoriIdx = headerMap.get("kategori");
-    const jumlahIdx = headerMap.get("jumlah");
-    const deskripsiIdx = headerMap.get("deskripsi");
-
-    if (tanggalIdx === undefined || tipeIdx === undefined || jumlahIdx === undefined) {
-      return { error: "Header kolom tidak sesuai! Pastikan ada: Tanggal, Tipe, Jumlah!" };
-    }
-
-    // Helper untuk parsing tanggal
-    const parseDate = (dateValue: any): Date | null => {
-      if (!dateValue) return null;
-      if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
-        return dateValue;
-      }
-      const dateStr = String(dateValue);
-      
-      // Coba format dd/mm/yyyy atau dd-mm-yyyy
-      const separators = ["/", "-"];
-      for (const sep of separators) {
-        const parts = dateStr.split(sep);
-        if (parts.length === 3) {
-          const day = parseInt(parts[0]);
-          const month = parseInt(parts[1]) - 1; // bulan 0-11
-          const year = parseInt(parts[2]);
-          const date = new Date(year, month, day);
-          if (!isNaN(date.getTime())) {
-            return date;
-          }
-        }
-      }
-      
-      // Coba format ISO atau lainnya
-      const dateFromString = new Date(dateStr);
-      if (!isNaN(dateFromString.getTime())) {
-        return dateFromString;
-      }
-      return null;
-    };
+    console.log("Data from Excel:", jsonData);
 
     let importedCount = 0;
     let errorCount = 0;
 
-    // Validasi dan simpan data satu per satu
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      console.log("Processing row:", row);
-      const tanggalValue = row[tanggalIdx];
-      const tipeValue = row[tipeIdx];
-      const kategoriValue = row[kategoriIdx];
-      const jumlahValue = row[jumlahIdx];
-      const deskripsiValue = row[deskripsiIdx];
-
-      const tanggal = parseDate(tanggalValue);
-      if (!tanggal) {
-        console.error("Invalid date at row", i + 1, ":", tanggalValue);
+    for (let i = 0; i < jsonData.length; i++) {
+      const item = jsonData[i];
+      console.log(`Processing item ${i + 1}:`, item);
+      
+      let tgl: Date | null = null;
+      let tipe: TransactionType = TransactionType.INCOME;
+      let kategori = "Lainnya";
+      let jumlah = 0;
+      let deskripsi = "-";
+      
+      // Coba dapatkan nilai dari berbagai kemungkinan nama kolom
+      for (const key of Object.keys(item)) {
+        const lowerKey = key.toLowerCase().trim();
+        const val = item[key];
+        
+        if (lowerKey.includes("tanggal") || lowerKey.includes("tgl")) {
+          tgl = parseDate(val);
+        } else if (lowerKey.includes("tipe") || lowerKey.includes("type")) {
+          const v = String(val).toLowerCase().trim();
+          tipe = v === "pengeluaran" || v === "expense" ? TransactionType.EXPENSE : TransactionType.INCOME;
+        } else if (lowerKey.includes("kategori") || lowerKey.includes("category")) {
+          kategori = String(val).trim();
+        } else if (lowerKey.includes("jumlah") || lowerKey.includes("amount") || lowerKey.includes("harga")) {
+          jumlah = Number(val);
+        } else if (lowerKey.includes("deskripsi") || lowerKey.includes("description") || lowerKey.includes("keterangan")) {
+          deskripsi = String(val).trim();
+        }
+      }
+      
+      // Validasi
+      if (!tgl) {
+        console.error("Invalid date at item", i + 1);
         errorCount++;
         continue;
       }
-
-      let tipe;
-      if (String(tipeValue).toLowerCase() === "pemasukan" || String(tipeValue).toUpperCase() === "INCOME") {
-        tipe = "INCOME";
-      } else {
-        tipe = "EXPENSE";
-      }
-
-      const kategori = kategoriValue ? String(kategoriValue).trim() : "Lainnya";
-      const jumlah = Number(jumlahValue);
-      const deskripsi = deskripsiValue ? String(deskripsiValue).trim() : "-";
-
+      
       if (isNaN(jumlah) || jumlah <= 0) {
-        console.error("Invalid amount at row", i + 1, ":", jumlahValue);
+        console.error("Invalid amount at item", i + 1);
         errorCount++;
         continue;
       }
-
+      
       await prisma.financialTransaction.create({
         data: {
-          date: tanggal,
+          date: tgl,
           type: tipe,
-          category: kategori,
+          category: kategori || "Lainnya",
           amount: jumlah,
-          description: deskripsi,
+          description: deskripsi || "-",
         },
       });
+      
       importedCount++;
     }
-
+    
     if (importedCount === 0) {
-      return { error: "Tidak ada data yang berhasil diimport! Periksa format tanggal dan jumlah!" };
+      return { error: "Tidak ada data yang berhasil diimport!" };
     }
-
+    
     revalidatePath("/admin/keuangan");
     revalidatePath("/admin");
-    return { success: true, message: `Berhasil import ${importedCount} data! ${errorCount > 0 ? `${errorCount} data gagal` : ""}` };
+    
+    return { 
+      success: true, 
+      message: `Berhasil import ${importedCount} data!${errorCount > 0 ? ` (${errorCount} gagal)` : ""}` 
+    };
+    
   } catch (error) {
-    console.error("Failed to import transactions error:", error);
-    return { error: `Gagal mengimport data: ${error instanceof Error ? error.message : "Periksa format file!"}` };
+    console.error("Import failed:", error);
+    return { error: `Gagal mengimport: ${error instanceof Error ? error.message : "File tidak sesuai"}` };
   }
 }
 
