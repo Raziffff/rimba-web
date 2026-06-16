@@ -8,6 +8,32 @@ import { redirect } from "next/navigation";
 import * as XLSX from "xlsx";
 import Groq from "groq-sdk";
 
+// Helper untuk parsing tanggal
+function parseDate(dateValue: any): Date | null {
+  if (!dateValue) return null;
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    return dateValue;
+  }
+  const dateStr = String(dateValue);
+  
+  const separators = ["/", "-"];
+  for (const sep of separators) {
+    const parts = dateStr.split(sep);
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const year = parseInt(parts[2]);
+      const date = new Date(year, month, day);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+  }
+  
+  const dateFromString = new Date(dateStr);
+  return !isNaN(dateFromString.getTime()) ? dateFromString : null;
+}
+
 export async function createTransaction(data: TransactionInput) {
   const session = await auth();
 
@@ -51,7 +77,6 @@ export async function deleteTransaction(id: string) {
   }
 }
 
-// Fungsi untuk Export Excel
 export async function exportTransactions(year?: number) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
@@ -71,7 +96,6 @@ export async function exportTransactions(year?: number) {
     orderBy: { date: "asc" },
   });
 
-  // Mapping data ke format Excel
   const dataForExcel = transactions.map((t) => ({
     Tanggal: new Date(t.date).toLocaleDateString("id-ID"),
     Tipe: t.type === "INCOME" ? "Pemasukan" : "Pengeluaran",
@@ -84,84 +108,12 @@ export async function exportTransactions(year?: number) {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
 
-  // Konversi ke base64 string
   const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
   const base64 = buffer.toString("base64");
 
   return { base64, filename: `Laporan_Keuangan_RIMBA_${year || new Date().getFullYear()}.xlsx` };
 }
 
-import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { TransactionType } from "@prisma/client";
-import * as XLSX from "xlsx";
-import { revalidatePath } from "next/cache";
-import { groq } from "@/lib/groq";
-
-// Helper untuk parsing tanggal
-function parseDate(dateValue: any): Date | null {
-  if (!dateValue) return null;
-  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
-    return dateValue;
-  }
-  const dateStr = String(dateValue);
-  
-  // Coba format dd/mm/yyyy atau dd-mm-yyyy
-  const separators = ["/", "-"];
-  for (const sep of separators) {
-    const parts = dateStr.split(sep);
-    if (parts.length === 3) {
-      const day = parseInt(parts[0]);
-      const month = parseInt(parts[1]) - 1; // bulan 0-11
-      const year = parseInt(parts[2]);
-      const date = new Date(year, month, day);
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
-    }
-  }
-  
-  // Coba format ISO atau lainnya
-  const dateFromString = new Date(dateStr);
-  if (!isNaN(dateFromString.getTime())) {
-    return dateFromString;
-  }
-  return null;
-}
-
-// Fungsi untuk Export Excel
-export async function exportTransactions(year: number) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
-
-  const transactions = await prisma.financialTransaction.findMany({
-    where: {
-      date: {
-        gte: new Date(`${year}-01-01`),
-        lte: new Date(`${year}-12-31`)
-      }
-    },
-    orderBy: { date: "asc" }
-  });
-
-  const data = transactions.map(t => ({
-    Tanggal: t.date.toLocaleDateString('id-ID'),
-    Tipe: t.type === TransactionType.INCOME ? "Pemasukan" : "Pengeluaran",
-    Kategori: t.category,
-    Jumlah: t.amount,
-    Deskripsi: t.description
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
-  const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
-  const base64 = buffer.toString("base64");
-
-  return { base64, filename: `Laporan_Keuangan_RIMBA_${year || new Date().getFullYear()}.xlsx` };
-}
-
-// Fungsi untuk Import Excel
 export async function importTransactions(base64File: string) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
@@ -183,12 +135,11 @@ export async function importTransactions(base64File: string) {
       console.log(`Processing item ${i + 1}:`, item);
       
       let tgl: Date | null = null;
-      let tipe: TransactionType = TransactionType.INCOME;
+      let tipe: "INCOME" | "EXPENSE" = "INCOME";
       let kategori = "Lainnya";
       let jumlah = 0;
       let deskripsi = "-";
       
-      // Coba dapatkan nilai dari berbagai kemungkinan nama kolom
       for (const key of Object.keys(item)) {
         const lowerKey = key.toLowerCase().trim();
         const val = item[key];
@@ -197,7 +148,7 @@ export async function importTransactions(base64File: string) {
           tgl = parseDate(val);
         } else if (lowerKey.includes("tipe") || lowerKey.includes("type")) {
           const v = String(val).toLowerCase().trim();
-          tipe = v === "pengeluaran" || v === "expense" ? TransactionType.EXPENSE : TransactionType.INCOME;
+          tipe = v === "pengeluaran" || v === "expense" ? "EXPENSE" : "INCOME";
         } else if (lowerKey.includes("kategori") || lowerKey.includes("category")) {
           kategori = String(val).trim();
         } else if (lowerKey.includes("jumlah") || lowerKey.includes("amount") || lowerKey.includes("harga")) {
@@ -207,7 +158,6 @@ export async function importTransactions(base64File: string) {
         }
       }
       
-      // Validasi
       if (!tgl) {
         console.error("Invalid date at item", i + 1);
         errorCount++;
@@ -251,15 +201,25 @@ export async function importTransactions(base64File: string) {
   }
 }
 
-// Fungsi untuk Download Template Excel
 export async function downloadTemplate() {
   const templateData = [
-    ["Tanggal", "Tipe", "Kategori", "Jumlah", "Deskripsi"],
-    ["15/01/2024", "Pemasukan", "Donasi", 1000000, "Donasi dari Pak Ahmad"],
-    ["18/01/2024", "Pengeluaran", "Acara", 350000, "Beli snack untuk kajian"],
+    {
+      Tanggal: "15/01/2024",
+      Tipe: "Pemasukan",
+      Kategori: "Donasi",
+      Jumlah: 1000000,
+      Deskripsi: "Donasi dari Pak Ahmad"
+    },
+    {
+      Tanggal: "18/01/2024",
+      Tipe: "Pengeluaran",
+      Kategori: "Acara",
+      Jumlah: 350000,
+      Deskripsi: "Beli snack untuk kajian"
+    }
   ];
 
-  const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+  const worksheet = XLSX.utils.json_to_sheet(templateData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Template Laporan Keuangan");
   const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
@@ -268,7 +228,6 @@ export async function downloadTemplate() {
   return { base64, filename: "Template_Laporan_Keuangan_RIMBA.xlsx" };
 }
 
-// Fungsi untuk Generate Laporan AI
 export async function generateFinancialReport(year: number) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
@@ -287,12 +246,10 @@ export async function generateFinancialReport(year: number) {
     return { report: "Tidak ada data transaksi untuk tahun ini." };
   }
 
-  // Hitung total
   const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((sum, t) => sum + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
 
-  // Ambil data untuk AI
   const dataPrompt = JSON.stringify({
     tahun: year,
     totalPemasukan: totalIncome,
@@ -308,8 +265,7 @@ export async function generateFinancialReport(year: number) {
     }))
   });
 
-  // Panggil Groq AI
-  const groq = new Groq({
+  const groqClient = new Groq({
     apiKey: process.env.GROQ_API_KEY,
   });
 
@@ -330,7 +286,7 @@ export async function generateFinancialReport(year: number) {
     4. Kesimpulan dan saran singkat (jika ada)
   `;
 
-  const completion = await groq.chat.completions.create({
+  const completion = await groqClient.chat.completions.create({
     model: "llama-3.1-70b-versatile",
     messages: [
       { role: "system", content: systemPrompt },
