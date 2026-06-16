@@ -97,9 +97,13 @@ export async function importTransactions(base64File: string) {
     const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
-    // Baca sebagai array of array (lebih reliable)
-    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+    type ExcelRow = (string | number | boolean | Date | null | undefined)[];
+
+    const rows = XLSX.utils.sheet_to_json<ExcelRow>(worksheet, {
+      header: 1,
+      defval: null,
+    });
 
     console.log("All rows from Excel:", rows);
 
