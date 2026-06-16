@@ -117,16 +117,18 @@ export async function importTransactions(base64File: string) {
 
     // Validasi dan simpan data satu per satu
     for (const row of data) {
-      // @ts-ignore
-      const tanggal = parseDate(row.Tanggal);
-      // @ts-ignore
-      const tipe = row.Tipe === "Pemasukan" ? "INCOME" : "EXPENSE";
-      // @ts-ignore
-      const kategori = row.Kategori || "Lainnya";
-      // @ts-ignore
-      const jumlah = Number(row.Jumlah);
-      // @ts-ignore
-      const deskripsi = row.Deskripsi || "-";
+      const rowTyped = row as {
+        Tanggal?: string;
+        Tipe?: string;
+        Kategori?: string;
+        Jumlah?: number;
+        Deskripsi?: string;
+      };
+      const tanggal = parseDate(rowTyped.Tanggal || "");
+      const tipe = rowTyped.Tipe === "Pemasukan" ? "INCOME" : "EXPENSE";
+      const kategori = rowTyped.Kategori || "Lainnya";
+      const jumlah = Number(rowTyped.Jumlah);
+      const deskripsi = rowTyped.Deskripsi || "-";
 
       if (tanggal && !isNaN(jumlah)) {
         await prisma.financialTransaction.create({

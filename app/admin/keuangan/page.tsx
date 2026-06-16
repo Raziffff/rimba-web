@@ -19,9 +19,9 @@ export default async function AdminKeuanganPage() {
   });
 
   // Calculate summary
-  const allTransactions = (await prisma.financialTransaction.findMany({
-    select: { amount: true, type: true, date: true }
-  })) as { amount: number; type: TransactionType; date: Date }[];
+  const allTransactions = await prisma.financialTransaction.findMany({
+    select: { amount: true, type: true, date: true, category: true, description: true }
+  });
   
   const totalIncome = allTransactions
     .filter((t) => t.type === TransactionType.INCOME)
