@@ -51,23 +51,23 @@ export default function TransactionTable({ transactions }: TransactionTableProps
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left">
+    <div className="overflow-x-auto rounded-2xl border border-slate-100">
+      <table className="w-full text-left min-w-[700px]">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50/50">
-            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Tanggal
             </th>
-            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Kategori
             </th>
-            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Deskripsi
             </th>
-            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
+            <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
               Jumlah
             </th>
-            <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
+            <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
               Aksi
             </th>
           </tr>
@@ -75,10 +75,10 @@ export default function TransactionTable({ transactions }: TransactionTableProps
         <tbody className="divide-y divide-slate-100">
           {transactions.map((transaction) => (
             <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+              <td className="whitespace-nowrap px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-600">
                 {format(new Date(transaction.date), "dd MMM yyyy", { locale: id })}
               </td>
-              <td className="px-6 py-4">
+              <td className="px-3 sm:px-6 py-3 sm:py-4">
                 <span
                   className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     transaction.type === "INCOME"
@@ -89,18 +89,18 @@ export default function TransactionTable({ transactions }: TransactionTableProps
                   {transaction.category}
                 </span>
               </td>
-              <td className="px-6 py-4 text-sm text-slate-600">
+              <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-600">
                 {transaction.description}
               </td>
               <td
-                className={`px-6 py-4 text-right text-sm font-semibold ${
+                className={`px-3 sm:px-6 py-3 sm:py-4 text-right text-sm font-semibold ${
                   transaction.type === "INCOME" ? "text-green-700" : "text-red-700"
                 }`}
               >
                 {transaction.type === "INCOME" ? "+" : "-"} Rp{" "}
                 {transaction.amount.toLocaleString("id-ID")}
               </td>
-              <td className="px-6 py-4 text-right">
+              <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <button
@@ -138,7 +138,7 @@ export default function TransactionTable({ transactions }: TransactionTableProps
           ))}
           {transactions.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">
+              <td colSpan={5} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-400 italic">
                 Belum ada transaksi tercatat.
               </td>
             </tr>
