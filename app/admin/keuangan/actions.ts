@@ -103,10 +103,22 @@ export async function importTransactions(base64File: string) {
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
+    // Helper untuk parsing tanggal dd/mm/yyyy
+    const parseDate = (dateStr: string) => {
+      if (!dateStr) return null;
+      const parts = dateStr.split("/");
+      if (parts.length !== 3) return null;
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1; // Bulan di JavaScript dimulai dari 0
+      const year = parseInt(parts[2]);
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    };
+
     // Validasi dan simpan data satu per satu
     for (const row of data) {
       // @ts-ignore
-      const tanggal = new Date(row.Tanggal);
+      const tanggal = parseDate(row.Tanggal);
       // @ts-ignore
       const tipe = row.Tipe === "Pemasukan" ? "INCOME" : "EXPENSE";
       // @ts-ignore
@@ -116,7 +128,7 @@ export async function importTransactions(base64File: string) {
       // @ts-ignore
       const deskripsi = row.Deskripsi || "-";
 
-      if (!isNaN(tanggal.getTime()) && !isNaN(jumlah)) {
+      if (tanggal && !isNaN(jumlah)) {
         await prisma.financialTransaction.create({
           data: {
             date: tanggal,

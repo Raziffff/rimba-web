@@ -20,8 +20,8 @@ import {
 } from "@/app/admin/keuangan/actions";
 
 type Props = {
-  allTransactions: { amount: number; type: "INCOME" | "EXPENSE"; date: Date }[];
-  transactions: any[];
+  allTransactions: Omit<FinanceTransaction, "id">[];
+  transactions: FinanceTransaction[];
   yearlyData: { name: string; income: number; expense: number }[];
   totalIncome: number;
   totalExpense: number;
