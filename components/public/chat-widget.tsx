@@ -11,22 +11,25 @@ type ChatMessage = {
   content: string;
 };
 
+type ConversationStep = "idle" | "choosing_topic" | "waiting_for_selection" | "providing_info";
+
 const quickQuestions = [
-  { label: "Agenda terdekat", text: "Agenda terdekat apa?" },
-  { label: "Lokasi kegiatan", text: "Lokasi kegiatan biasanya di mana?" },
-  { label: "Berita terbaru", text: "Berita terbaru apa?" },
-  { label: "Kontak", text: "Kontak RIMBA di mana?" },
+  { label: "Agenda terdekat", text: "1" },
+  { label: "Berita terbaru", text: "2" },
+  { label: "Lokasi & Kontak", text: "3" },
+  { label: "Tentang RIMBA", text: "4" },
 ];
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<ConversationStep>("choosing_topic");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
       content:
-        "Halo! Saya Tanya RIMBA. Silakan tanya seputar agenda, berita, atau kontak.",
+        "Halo! Saya Tanya RIMBA. Ada yang bisa saya bantu?\n\nPilih topik dibawah ini atau tanyakan langsung:\n1. Agenda terdekat\n2. Berita terbaru\n3. Lokasi dan kontak\n4. Tentang RIMBA",
     },
   ]);
 
@@ -55,12 +58,30 @@ export default function ChatWidget() {
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
+    let responseText = "";
+
+    if (step === "choosing_topic" || step === "waiting_for_selection") {
+      if (text === "1") {
+        responseText = "Baik, saya akan menampilkan agenda terdekat...";
+      } else if (text === "2") {
+        responseText = "Baik, saya akan menampilkan berita terbaru...";
+      } else if (text === "3") {
+        responseText = "Baik, berikut informasi lokasi dan kontak RIMBA...";
+      } else if (text === "4") {
+        responseText = "Baik, berikut informasi tentang RIMBA...";
+      }
+    }
+
+    if (responseText) {
+      setMessages((prev) => [...prev, { role: "assistant", content: responseText }]);
+    }
+
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: text,
+          message: responseText ? (text === "1" ? "Agenda terdekat apa?" : text === "2" ? "Berita terbaru apa?" : text === "3" ? "Kontak RIMBA di mana?" : "Apa itu RIMBA?") : text,
           history: historyForApi,
         }),
       });
@@ -70,10 +91,18 @@ export default function ChatWidget() {
         throw new Error(data.error || "Gagal memproses permintaan.");
       }
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.answer || "Maaf, saya belum bisa menjawab." },
-      ]);
+      if (responseText) {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { role: "assistant", content: data.answer || "Maaf, saya belum bisa menjawab." };
+          return newMessages;
+        });
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.answer || "Maaf, saya belum bisa menjawab." },
+        ]);
+      }
     } catch (e) {
       const err = e as Error;
       setMessages((prev) => [
@@ -119,19 +148,21 @@ export default function ChatWidget() {
               ref={listRef}
               className="max-h-[55vh] space-y-3 overflow-y-auto px-4 py-3"
             >
-              <div className="flex flex-wrap gap-2">
-                {quickQuestions.map((q) => (
-                  <button
-                    key={q.label}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => void send(q.text)}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-green-600 hover:text-green-700 disabled:opacity-60"
-                  >
-                    {q.label}
-                  </button>
-                ))}
-              </div>
+              {messages.length <= 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {quickQuestions.map((q) => (
+                    <button
+                      key={q.label}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => void send(q.text)}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-green-600 hover:text-green-700 disabled:opacity-60"
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {messages.map((m, idx) => {
                 const isUser = m.role === "user";
                 return (
@@ -143,7 +174,7 @@ export default function ChatWidget() {
                       className={
                         isUser
                           ? "max-w-[85%] rounded-2xl bg-green-600 px-3 py-2 text-sm text-white"
-                          : "max-w-[85%] rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-900"
+                          : "max-w-[85%] rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-900 whitespace-pre-line"
                       }
                     >
                       {m.content}
@@ -158,7 +189,7 @@ export default function ChatWidget() {
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Tulis pertanyaan..."
+                  placeholder="Tulis pertanyaan atau pilih topik..."
                   className="min-h-[44px] resize-none rounded-xl border-slate-200"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
