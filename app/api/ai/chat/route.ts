@@ -82,6 +82,42 @@ function looksForbidden(text: string) {
   return forbidden.some((k) => t.includes(k));
 }
 
+function getRandomItem<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+const smallTalkResponses = {
+  greetings: [
+    "Halo! Senang bertemu denganmu! Ada yang ingin kamu tanyakan tentang RIMBA? 😊",
+    "Hey! Selamat datang di Tanya RIMBA! Ada yang bisa saya bantu hari ini?",
+    "Assalamualaikum! Saya Tanya RIMBA. Ada informasi yang ingin kamu ketahui?",
+    "Hai-hai! Semoga harimu menyenangkan! Butuh bantuan apa?"
+  ],
+  howAreYou: [
+    "Saya baik-baik saja, terima kasih tanya! Bagaimana denganmu? Ada yang ingin kita bahas tentang RIMBA? 😃",
+    "Alhamdulillah, saya selalu siap membantu! Kamu mau tanya agenda, berita, atau yang lain?",
+    "Saya sehat dan bersemangat! Ada yang ingin kamu ketahui tentang organisasi kita?"
+  ],
+  thanks: [
+    "Sama-sama! Senang bisa membantu 😊 Ada lagi yang ingin ditanyakan?",
+    "Dengan senang hati! Kalau butuh informasi lain, tinggal chat aja ya!",
+    "Terima kasih kembali! Jangan ragu untuk bertanya lagi kapan saja!"
+  ],
+  timeGreetings: {
+    pagi: ["Selamat pagi! Semoga hari ini penuh berkah! Ada yang ingin kita bahas?"],
+    siang: ["Selamat siang! Semoga harimu menyenangkan! Butuh informasi apa?"],
+    sore: ["Selamat sore! Sudah istirahat sebentar? Ada yang ingin ditanyakan tentang RIMBA?"],
+    malam: ["Selamat malam! Semoga malammu tenang. Ada yang ingin kita bicarakan?"]
+  }
+};
+
+const quickSuggestions = [
+  "Agenda terdekat apa?",
+  "Berita terbaru?",
+  "Lokasi dimana?",
+  "Cara daftar agenda?"
+];
+
 function isSmallTalk(text: string) {
   const t = text.toLowerCase().trim();
   const patterns = [
@@ -124,6 +160,36 @@ function detectIntent(text: string) {
   return "general";
 }
 
+function getSmallTalkResponse(text: string): string {
+  const t = text.toLowerCase().trim();
+  
+  if (t.includes("apa kabar") || t.includes("apakabar") || t.includes("gimana kabar")) {
+    return getRandomItem(smallTalkResponses.howAreYou);
+  } else if (t.includes("terima kasih") || t.includes("makasih") || t.includes("thanks")) {
+    return getRandomItem(smallTalkResponses.thanks);
+  } else if (t.includes("pagi")) {
+    return getRandomItem(smallTalkResponses.timeGreetings.pagi);
+  } else if (t.includes("siang")) {
+    return getRandomItem(smallTalkResponses.timeGreetings.siang);
+  } else if (t.includes("sore")) {
+    return getRandomItem(smallTalkResponses.timeGreetings.sore);
+  } else if (t.includes("malam")) {
+    return getRandomItem(smallTalkResponses.timeGreetings.malam);
+  } else {
+    return getRandomItem(smallTalkResponses.greetings);
+  }
+}
+
+function addQuickSuggestions(text: string): string {
+  const suggestions = getRandomItem([
+    "\n\nMau tanya yang lain? Coba:",
+    "\n\nAtau kamu tertarik tahu tentang:",
+    "\n\nButuh info lain? Ini pilihan cepat:"
+  ]);
+  const randomSuggestions = [...quickSuggestions].sort(() => Math.random() - 0.5).slice(0, 3);
+  return `${text}${suggestions}\n• ${randomSuggestions.join('\n• ')}`;
+}
+
 export async function POST(req: Request) {
   const ip = getClientIp(req);
   if (!rateLimitOk(ip)) {
@@ -148,16 +214,16 @@ export async function POST(req: Request) {
   const { message, history, conversationState } = parsed.data;
 
   if (isSmallTalk(message)) {
+    const response = getSmallTalkResponse(message);
     return NextResponse.json({
-      answer:
-        "Halo! Saya Tanya RIMBA. Ada yang bisa saya bantu?\n\nPilih topik dibawah ini atau tanyakan langsung:\n1. Agenda terdekat\n2. Berita terbaru\n3. Lokasi dan kontak\n4. Tentang RIMBA",
+      answer: addQuickSuggestions(response),
     });
   }
 
   if (looksForbidden(message)) {
     return NextResponse.json({
       answer:
-        "Maaf, saya tidak bisa membantu untuk informasi internal atau sensitif. Silakan hubungi kami melalui halaman kontak.",
+        addQuickSuggestions("Maaf ya, saya tidak bisa membantu untuk informasi internal atau sensitif. Silakan hubungi kami melalui halaman kontak ya!"),
     });
   }
 
@@ -170,40 +236,40 @@ export async function POST(req: Request) {
     switch (intent) {
       case "faq_about":
         const site = await prisma.siteSetting.findFirst();
-        faqAnswer = `RIMBA adalah singkatan dari Remaja Islam Masjid Al-Barkah. ${site?.description ? site.description : 'Kami adalah organisasi remaja masjid yang berfokus pada kegiatan keislaman dan sosial.'}`;
+        faqAnswer = `Oh, RIMBA adalah singkatan dari Remaja Islam Masjid Al-Barkah loh! ${site?.description ? site.description : 'Kita adalah organisasi remaja masjid yang fokus pada kegiatan keislaman dan sosial.'}`;
         break;
       
       case "faq_location":
       case "faq_contact":
         const siteContact = await prisma.siteSetting.findFirst();
-        faqAnswer = `Berikut informasi kontak RIMBA:\n${siteContact?.address ? `📍 Alamat: ${siteContact.address}` : ''}\n${siteContact?.phone ? `📞 Telepon/WA: ${siteContact.phone}` : ''}\n${siteContact?.email ? `📧 Email: ${siteContact.email}` : ''}`;
+        faqAnswer = `Ini dia info kontak RIMBA:\n${siteContact?.address ? `📍 Alamat: ${siteContact.address}` : ''}\n${siteContact?.phone ? `📞 Telepon/WA: ${siteContact.phone}` : ''}\n${siteContact?.email ? `📧 Email: ${siteContact.email}` : ''}`;
         break;
 
       case "faq_agenda":
         const agendas = await prisma.agenda.findMany({ take: 3, orderBy: { date: 'asc' } });
         if (agendas.length > 0) {
-          faqAnswer = `Agenda terdekat RIMBA:\n${agendas.map((a, i) => `${i+1}. ${a.title} - ${new Date(a.date).toLocaleDateString('id-ID')}${a.location ? ` (${a.location})` : ''}`).join('\n')}`;
+          faqAnswer = `Oke, ini agenda terdekat RIMBA yang akan datang:\n${agendas.map((a, i) => `${i+1}. ${a.title} - ${new Date(a.date).toLocaleDateString('id-ID')}${a.location ? ` (${a.location})` : ''}`).join('\n')}`;
         } else {
-          faqAnswer = "Belum ada agenda terdekat. Silakan cek halaman agenda untuk informasi terbaru.";
+          faqAnswer = "Hmm, untuk saat ini belum ada agenda terdekat ya. Kamu bisa cek halaman agenda untuk update terbaru nanti!";
         }
         break;
 
       case "faq_news":
         const news = await prisma.news.findMany({ take: 3, where: { isPublished: true }, orderBy: { publishedAt: 'desc' } });
         if (news.length > 0) {
-          faqAnswer = `Berita terbaru RIMBA:\n${news.map((n, i) => `${i+1}. ${n.title} - ${new Date(n.publishedAt || n.createdAt).toLocaleDateString('id-ID')}`).join('\n')}`;
+          faqAnswer = `Berita terbaru dari RIMBA nih:\n${news.map((n, i) => `${i+1}. ${n.title} - ${new Date(n.publishedAt || n.createdAt).toLocaleDateString('id-ID')}`).join('\n')}`;
         } else {
-          faqAnswer = "Belum ada berita terbaru. Silakan cek halaman berita untuk informasi terbaru.";
+          faqAnswer = "Belum ada berita terbaru saat ini. Nanti kita update di halaman berita ya!";
         }
         break;
 
       case "faq_register":
-        faqAnswer = "Untuk mendaftar agenda, silakan buka halaman agenda, pilih agenda yang ingin diikuti, lalu isi form pendaftaran yang tersedia.";
+        faqAnswer = "Untuk mendaftar agenda, caranya mudah! Cukup buka halaman agenda, pilih agenda yang ingin kamu ikuti, lalu isi form pendaftaran yang sudah disediakan ya!";
         break;
     }
 
     if (faqAnswer) {
-      return NextResponse.json({ answer: faqAnswer });
+      return NextResponse.json({ answer: addQuickSuggestions(faqAnswer) });
     }
   }
 
