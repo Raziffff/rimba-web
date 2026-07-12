@@ -11,7 +11,7 @@ const values = [
   {
     title: "Berkarya",
     description:
-      "Mendorong kreativitas remaja masjid dalam program, media dakwah, dan kegiatan sosial yang bermanfaat.",
+      "Mendorong kreativitas remaja masjid dalam media dakwah dan kegiatan sosial yang bermanfaat.",
     icon: Flag,
   },
   {
@@ -22,15 +22,26 @@ const values = [
   },
 ];
 
-const structure = [
+const coreStructure = [
   { role: "Pembina", name: "Ustadz / Pengurus Masjid" },
-  { role: "Ketua", name: "Ketua RIMBA" },
-  { role: "Wakil Ketua", name: "Wakil Ketua RIMBA" },
+  { role: "Ketua RIMBA", name: "Ketua RIMBA" },
   { role: "Sekretaris", name: "Sekretaris" },
   { role: "Bendahara", name: "Bendahara" },
-  { role: "Divisi Dakwah", name: "Koordinator Divisi" },
-  { role: "Divisi Sosial", name: "Koordinator Divisi" },
-  { role: "Divisi Media", name: "Koordinator Divisi" },
+];
+
+const bphStructure = [
+  { role: "Ketua Pelaksana", name: "Ketua Pelaksana" },
+  { role: "Sekretaris", name: "Sekretaris" },
+  { role: "Bendahara", name: "Bendahara" },
+];
+
+const divisionStructure = [
+  { role: "Divisi Humas", name: "Koordinator Divisi" },
+  { role: "Divisi Dana", name: "Koordinator Divisi" },
+  { role: "Divisi Konsumsi", name: "Koordinator Divisi" },
+  { role: "Divisi Acara", name: "Koordinator Divisi" },
+  { role: "Divisi Perlengkapan", name: "Koordinator Divisi" },
+  { role: "Divisi PDD", name: "Koordinator Divisi" },
 ];
 
 export default function TentangPage() {
@@ -47,8 +58,7 @@ export default function TentangPage() {
           <p className="mt-6 leading-8 text-slate-600">
             RIMBA adalah wadah pembinaan dan kolaborasi remaja masjid untuk
             tumbuh dalam iman, ilmu, dan aksi nyata. Kami membangun kultur
-            organisasi yang sehat, program yang terarah, dan kegiatan sosial
-            yang bermanfaat bagi masyarakat.
+            organisasi yang sehat dan kegiatan sosial yang bermanfaat bagi masyarakat.
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -130,7 +140,47 @@ export default function TentangPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {structure.map((item) => (
+          {coreStructure.map((item) => (
+            <div
+              key={item.role}
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <p className="text-sm font-semibold text-slate-900">{item.role}</p>
+              <p className="mt-2 text-sm text-slate-500">{item.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-16">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            Badan Pengurus Harian (BPH)
+          </h2>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {bphStructure.map((item) => (
+            <div
+              key={item.role}
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <p className="text-sm font-semibold text-slate-900">{item.role}</p>
+              <p className="mt-2 text-sm text-slate-500">{item.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-16">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            Divisi
+          </h2>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {divisionStructure.map((item) => (
             <div
               key={item.role}
               className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
