@@ -5,23 +5,49 @@ import PageHeader from "@/components/admin/page-header";
 import { TransactionType } from "@prisma/client";
 import FinanceDashboardClient from "@/components/admin/finance/finance-dashboard-client";
 
-export default async function AdminKeuanganPage() {
+type AdminKeuanganPageProps = {
+  searchParams?: Promise<{
+    year?: string;
+  }>;
+};
+
+export default async function AdminKeuanganPage({
+  searchParams,
+}: AdminKeuanganPageProps) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  // Fetch transactions from DB
-  const transactions = await prisma.financialTransaction.findMany({
-    orderBy: { date: "desc" },
-    take: 50,
-  });
+  const sp = await searchParams;
+  const currentYear = new Date().getFullYear();
+  const parsedYear = Number(sp?.year);
+  const selectedYear =
+    Number.isInteger(parsedYear) && parsedYear > 0 ? parsedYear : currentYear;
+  const startDate = new Date(selectedYear, 0, 1);
+  const endDate = new Date(selectedYear + 1, 0, 1);
 
-  // Calculate summary
-  const allTransactions = await prisma.financialTransaction.findMany({
-    select: { amount: true, type: true, date: true, category: true, description: true }
-  });
+  const [transactions, allTransactions] = await Promise.all([
+    prisma.financialTransaction.findMany({
+      where: {
+        date: {
+          gte: startDate,
+          lt: endDate,
+        },
+      },
+      orderBy: { date: "desc" },
+    }),
+    prisma.financialTransaction.findMany({
+      select: {
+        amount: true,
+        type: true,
+        date: true,
+        category: true,
+        description: true,
+      },
+    }),
+  ]);
   
   const totalIncome = allTransactions
     .filter((t) => t.type === TransactionType.INCOME)

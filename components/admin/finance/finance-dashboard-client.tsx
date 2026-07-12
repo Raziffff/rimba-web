@@ -151,7 +151,10 @@ export default function FinanceDashboardClient({
   const availableYears = Array.from(
     new Set(allTransactions.map((t) => new Date(t.date).getFullYear()))
   ).sort((a, b) => a - b);
-  if (!availableYears.includes(currentYear)) availableYears.push(currentYear);
+  if (!availableYears.includes(currentYear)) {
+    availableYears.push(currentYear);
+    availableYears.sort((a, b) => a - b);
+  }
 
   return (
     <section className="space-y-8 pb-20">
@@ -238,7 +241,7 @@ export default function FinanceDashboardClient({
 
           <SectionCard
             title="Riwayat Transaksi"
-            description="Daftar transaksi terbaru yang dicatat oleh bendahara."
+            description={`Daftar transaksi yang dicatat bendahara untuk tahun ${selectedYear}.`}
           >
             <div className="mt-4 sm:-mx-6">
               <TransactionTable
