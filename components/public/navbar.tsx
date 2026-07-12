@@ -7,8 +7,8 @@ import Logo from "@/components/shared/logo";
 
 const navItems = [
   { href: "/public", label: "Beranda" },
-  { href: "/public/agenda", label: "Agenda" },
   { href: "/public/tentang", label: "Tentang" },
+  { href: "/public/agenda", label: "Agenda" },
   { href: "/public/berita", label: "Berita" },
   { href: "/public/galeri", label: "Galeri" },
   { href: "/public/kontak", label: "Kontak" },
