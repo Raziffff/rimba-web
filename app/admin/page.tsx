@@ -15,27 +15,12 @@ import prisma from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { TransactionType } from "@prisma/client";
+import DashboardAutoRefresh from "@/components/admin/dashboard-auto-refresh";
 
-const recentActivities = [
-  {
-    title: "Berita Ramadhan berhasil dipublish",
-    time: "10 menit lalu",
-  },
-  {
-    title: "Agenda kajian Ahad telah diperbarui",
-    time: "1 jam lalu",
-  },
-  {
-    title: "Foto kegiatan bakti sosial ditambahkan",
-    time: "3 jam lalu",
-  },
-  {
-    title: "Pengaturan profil organisasi diperbarui",
-    time: "Kemarin",
-  },
-];
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -45,10 +30,10 @@ export default async function AdminDashboardPage() {
   }
 
   // Fetch dynamic stats
-  const [totalNews, totalAgenda, totalUsers, transactions, upcomingAgendas] = await Promise.all([
+  const [totalNews, totalAgenda, totalMembers, transactions, upcomingAgendas, recentActivities] = await Promise.all([
     prisma.news.count(),
     prisma.agenda.count(),
-    prisma.user.count(),
+    prisma.member.count(),
     prisma.financialTransaction.findMany({
       select: {
         type: true,
@@ -65,6 +50,12 @@ export default async function AdminDashboardPage() {
         date: "asc",
       },
       take: 3,
+    }),
+    prisma.activityLog.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 6,
     }),
   ]);
 
@@ -94,14 +85,16 @@ export default async function AdminDashboardPage() {
     },
     {
       title: "Anggota Aktif",
-      value: totalUsers.toString(),
-      description: "Data tampilan organisasi",
+      value: totalMembers.toString(),
+      description: "Anggota organisasi yang tercatat",
       icon: Users,
     },
   ];
 
   return (
     <section className="space-y-6 w-full">
+      <DashboardAutoRefresh />
+
       <PageHeader
         eyebrow="Dashboard Admin"
         title={`Selamat datang, ${session.user.name ?? "Admin"}`}
@@ -250,20 +243,39 @@ export default async function AdminDashboardPage() {
                 description="Log aktivitas sistem terakhir."
               >
                 <div className="mt-4 space-y-6">
-                  {recentActivities.map((activity, index) => (
-                    <div key={index} className="relative flex gap-4">
-                      {index !== recentActivities.length - 1 && (
-                        <div className="absolute left-2.5 top-7 h-full w-px bg-slate-100" />
-                      )}
-                      <div className="mt-1.5 h-5 w-5 rounded-full border-4 border-white bg-green-600 shadow-sm" />
-                      <div className="flex-1 pb-4">
-                        <p className="text-sm font-medium text-slate-900">
-                          {activity.title}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">{activity.time}</p>
+                  {recentActivities.length > 0 ? (
+                    recentActivities.map((activity, index) => (
+                      <div key={activity.id} className="relative flex gap-4">
+                        {index !== recentActivities.length - 1 && (
+                          <div className="absolute left-2.5 top-7 h-full w-px bg-slate-100" />
+                        )}
+                        <div className="mt-1.5 h-5 w-5 rounded-full border-4 border-white bg-green-600 shadow-sm" />
+                        <div className="flex-1 pb-4">
+                          <p className="text-sm font-medium text-slate-900">
+                            {activity.title}
+                          </p>
+                          {activity.detail ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {activity.detail}
+                            </p>
+                          ) : null}
+                          <p className="mt-1 text-xs text-slate-500">
+                            {formatDistanceToNow(activity.createdAt, {
+                              addSuffix: true,
+                              locale: idLocale,
+                            })}
+                          </p>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400">
+                      <ArrowUpRight size={40} strokeWidth={1} className="mb-2 opacity-20" />
+                      <p className="text-sm italic">
+                        Belum ada aktivitas terbaru yang tercatat.
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </SectionCard>
             </div>

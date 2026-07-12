@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { logAdminActivity } from "@/lib/activity-log";
 
 export async function addGalleryItem(data: GalleryInput) {
   const session = await auth();
@@ -17,8 +18,15 @@ export async function addGalleryItem(data: GalleryInput) {
   const validated = gallerySchema.parse(data);
 
   try {
-    await prisma.gallery.create({
+    const galleryItem = await prisma.gallery.create({
       data: validated,
+    });
+    await logAdminActivity({
+      action: "CREATE",
+      entityType: "GALLERY",
+      entityId: galleryItem.id,
+      title: `Foto galeri "${galleryItem.title || "Tanpa Judul"}" ditambahkan`,
+      detail: galleryItem.category || "Kategori belum diisi",
     });
   } catch (error) {
     console.error("Failed to add gallery item:", error);
@@ -26,6 +34,7 @@ export async function addGalleryItem(data: GalleryInput) {
   }
 
   revalidatePath("/admin/galeri");
+  revalidatePath("/admin");
   revalidatePath("/public/galeri");
   return { success: true };
 }
@@ -101,10 +110,23 @@ export async function deleteGalleryItem(id: string) {
   }
 
   try {
-    await prisma.gallery.delete({
+    const existingGalleryItem = await prisma.gallery.findUnique({
+      where: { id },
+      select: { title: true, category: true },
+    });
+
+    const deletedGalleryItem = await prisma.gallery.delete({
       where: { id },
     });
+    await logAdminActivity({
+      action: "DELETE",
+      entityType: "GALLERY",
+      entityId: deletedGalleryItem.id,
+      title: `Foto galeri "${existingGalleryItem?.title || "Tanpa Judul"}" dihapus`,
+      detail: existingGalleryItem?.category || "Foto dihapus dari galeri",
+    });
     revalidatePath("/admin/galeri");
+    revalidatePath("/admin");
     revalidatePath("/public/galeri");
     return { success: true };
   } catch (error) {

@@ -5,6 +5,7 @@ import { agendaSchema, type AgendaInput } from "@/lib/validations";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAdminActivity } from "@/lib/activity-log";
 
 export async function createAgenda(data: AgendaInput) {
   const session = await auth();
@@ -16,8 +17,15 @@ export async function createAgenda(data: AgendaInput) {
   const validated = agendaSchema.parse(data);
 
   try {
-    await prisma.agenda.create({
+    const agenda = await prisma.agenda.create({
       data: validated,
+    });
+    await logAdminActivity({
+      action: "CREATE",
+      entityType: "AGENDA",
+      entityId: agenda.id,
+      title: `Agenda "${agenda.title}" ditambahkan`,
+      detail: agenda.location || "Lokasi belum ditentukan",
     });
   } catch (error) {
     console.error("Failed to create agenda:", error);
@@ -25,6 +33,7 @@ export async function createAgenda(data: AgendaInput) {
   }
 
   revalidatePath("/admin/agenda");
+  revalidatePath("/admin");
   revalidatePath("/public/agenda");
   revalidatePath("/public");
   redirect("/admin/agenda");
@@ -40,9 +49,16 @@ export async function updateAgenda(id: string, data: AgendaInput) {
   const validated = agendaSchema.parse(data);
 
   try {
-    await prisma.agenda.update({
+    const agenda = await prisma.agenda.update({
       where: { id },
       data: validated,
+    });
+    await logAdminActivity({
+      action: "UPDATE",
+      entityType: "AGENDA",
+      entityId: agenda.id,
+      title: `Agenda "${agenda.title}" diperbarui`,
+      detail: agenda.location || "Lokasi belum ditentukan",
     });
   } catch (error) {
     console.error("Failed to update agenda:", error);
@@ -50,6 +66,7 @@ export async function updateAgenda(id: string, data: AgendaInput) {
   }
 
   revalidatePath("/admin/agenda");
+  revalidatePath("/admin");
   revalidatePath("/public/agenda");
   revalidatePath("/public");
   return { success: true };
@@ -63,10 +80,23 @@ export async function deleteAgenda(id: string) {
   }
 
   try {
-    await prisma.agenda.delete({
+    const existingAgenda = await prisma.agenda.findUnique({
+      where: { id },
+      select: { title: true, location: true },
+    });
+
+    const deletedAgenda = await prisma.agenda.delete({
       where: { id },
     });
+    await logAdminActivity({
+      action: "DELETE",
+      entityType: "AGENDA",
+      entityId: deletedAgenda.id,
+      title: `Agenda "${existingAgenda?.title ?? deletedAgenda.id}" dihapus`,
+      detail: existingAgenda?.location || "Agenda dihapus dari sistem",
+    });
     revalidatePath("/admin/agenda");
+    revalidatePath("/admin");
     revalidatePath("/public/agenda");
     revalidatePath("/public");
     return { success: true };

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as XLSX from "xlsx";
 import Groq from "groq-sdk";
+import { logAdminActivity } from "@/lib/activity-log";
 
 export async function createTransaction(data: TransactionInput) {
   const session = await auth();
@@ -18,8 +19,15 @@ export async function createTransaction(data: TransactionInput) {
   const validated = transactionSchema.parse(data);
 
   try {
-    await prisma.financialTransaction.create({
+    const transaction = await prisma.financialTransaction.create({
       data: validated,
+    });
+    await logAdminActivity({
+      action: "CREATE",
+      entityType: "FINANCE",
+      entityId: transaction.id,
+      title: `Transaksi ${transaction.type === "INCOME" ? "pemasukan" : "pengeluaran"} ditambahkan`,
+      detail: `${transaction.category} • Rp ${transaction.amount.toLocaleString("id-ID")}`,
     });
   } catch (error) {
     console.error("Failed to create transaction:", error);
@@ -39,8 +47,22 @@ export async function deleteTransaction(id: string) {
   }
 
   try {
-    await prisma.financialTransaction.delete({
+    const existingTransaction = await prisma.financialTransaction.findUnique({
       where: { id },
+      select: { type: true, category: true, amount: true },
+    });
+
+    const deletedTransaction = await prisma.financialTransaction.delete({
+      where: { id },
+    });
+    await logAdminActivity({
+      action: "DELETE",
+      entityType: "FINANCE",
+      entityId: deletedTransaction.id,
+      title: `Transaksi ${existingTransaction?.type === "INCOME" ? "pemasukan" : "pengeluaran"} dihapus`,
+      detail: existingTransaction
+        ? `${existingTransaction.category} • Rp ${existingTransaction.amount.toLocaleString("id-ID")}`
+        : "Transaksi dihapus dari sistem",
     });
     revalidatePath("/admin/keuangan");
     revalidatePath("/admin");
@@ -213,6 +235,13 @@ export async function importTransactions(base64File: string) {
     if (importedCount === 0) {
       return { error: "Tidak ada data yang berhasil diimport. Periksa format file!" };
     }
+
+    await logAdminActivity({
+      action: "IMPORT",
+      entityType: "FINANCE",
+      title: `${importedCount} transaksi keuangan berhasil diimport`,
+      detail: errorCount > 0 ? `${errorCount} data gagal diproses` : "Semua data berhasil diproses",
+    });
 
     return {
       success: true,

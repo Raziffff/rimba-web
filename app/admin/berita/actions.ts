@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { logAdminActivity } from "@/lib/activity-log";
 
 export async function createNews(data: NewsInput) {
   const session = await auth();
@@ -18,12 +19,19 @@ export async function createNews(data: NewsInput) {
   const validated = newsSchema.parse(data);
 
   try {
-    await prisma.news.create({
+    const news = await prisma.news.create({
       data: {
         ...validated,
         authorId: session.user.id,
         publishedAt: validated.isPublished ? new Date() : null,
       },
+    });
+    await logAdminActivity({
+      action: "CREATE",
+      entityType: "NEWS",
+      entityId: news.id,
+      title: `Berita "${news.title}" ditambahkan`,
+      detail: validated.isPublished ? "Status: dipublikasikan" : "Status: draft",
     });
   } catch (error) {
     console.error("Failed to create news:", error);
@@ -31,6 +39,7 @@ export async function createNews(data: NewsInput) {
   }
 
   revalidatePath("/admin/berita");
+  revalidatePath("/admin");
   revalidatePath("/public/berita");
   return { success: true };
 }
@@ -61,12 +70,19 @@ export async function updateNews(id: string, data: NewsInput) {
       publishedAt = null;
     }
 
-    await prisma.news.update({
+    const news = await prisma.news.update({
       where: { id },
       data: {
         ...validated,
         publishedAt,
       },
+    });
+    await logAdminActivity({
+      action: "UPDATE",
+      entityType: "NEWS",
+      entityId: news.id,
+      title: `Berita "${news.title}" diperbarui`,
+      detail: validated.isPublished ? "Status: dipublikasikan" : "Status: draft",
     });
   } catch (error) {
     console.error("Failed to update news:", error);
@@ -74,6 +90,7 @@ export async function updateNews(id: string, data: NewsInput) {
   }
 
   revalidatePath("/admin/berita");
+  revalidatePath("/admin");
   revalidatePath(`/public/berita/${data.slug}`);
   revalidatePath("/public/berita");
   return { success: true };
@@ -150,10 +167,23 @@ export async function deleteNews(id: string) {
   }
 
   try {
-    await prisma.news.delete({
+    const existingNews = await prisma.news.findUnique({
+      where: { id },
+      select: { title: true, isPublished: true },
+    });
+
+    const deletedNews = await prisma.news.delete({
       where: { id },
     });
+    await logAdminActivity({
+      action: "DELETE",
+      entityType: "NEWS",
+      entityId: deletedNews.id,
+      title: `Berita "${existingNews?.title ?? deletedNews.id}" dihapus`,
+      detail: existingNews?.isPublished ? "Status terakhir: dipublikasikan" : "Status terakhir: draft",
+    });
     revalidatePath("/admin/berita");
+    revalidatePath("/admin");
     revalidatePath("/public/berita");
     return { success: true };
   } catch (error) {
