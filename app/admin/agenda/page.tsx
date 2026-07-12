@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminAgendaPage() {
   const agendas = await prisma.agenda.findMany({
     orderBy: { date: "asc" },

@@ -3,6 +3,8 @@ import PageHeader from "@/components/admin/page-header";
 import SectionCard from "@/components/admin/section-card";
 import FeedbackTable, { type Feedback } from "./feedback-table";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPesanPage() {
   const messages = await prisma.feedbackMessage.findMany({
     orderBy: {

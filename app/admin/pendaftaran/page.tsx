@@ -3,6 +3,8 @@ import PageHeader from "@/components/admin/page-header";
 import SectionCard from "@/components/admin/section-card";
 import RegistrationTable, { type Registration } from "./registration-table";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPendaftaranPage() {
   const registrations = await prisma.agendaRegistration.findMany({
     include: {

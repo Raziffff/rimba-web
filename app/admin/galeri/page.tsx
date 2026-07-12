@@ -4,6 +4,8 @@ import GalleryForm from "@/components/admin/gallery-form";
 import GalleryList from "@/components/admin/gallery-list";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminGaleriPage() {
   const items = await prisma.gallery.findMany({
     orderBy: { createdAt: "desc" },
