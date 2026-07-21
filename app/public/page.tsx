@@ -173,7 +173,7 @@ export default async function HomePage() {
           </div>
 
           <div className="relative">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-200/60">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-200/60 animate-float">
               <div className="rounded-[1.5rem] bg-gradient-to-br from-green-800 via-green-700 to-emerald-500 p-8 text-white">
                 <p className="mb-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
                   Organisasi Remaja Masjid

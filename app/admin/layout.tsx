@@ -5,6 +5,7 @@ import AdminSidebar from "@/components/admin/sidebar";
 import AdminTopbar from "@/components/admin/topbar";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "sonner";
 
 export default function AdminLayout({
   children,
@@ -67,6 +68,7 @@ export default function AdminLayout({
           <div className="flex-1 p-4 sm:p-6 overflow-x-hidden">{children}</div>
         </div>
       </div>
+      <Toaster position="top-right" richColors />
     </main>
   );
 }

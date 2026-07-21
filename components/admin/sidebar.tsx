@@ -97,10 +97,10 @@ export default function AdminSidebar({ isMobile, onClose }: AdminSidebarProps) {
                       key={item.href}
                       href={item.href}
                       onClick={onClose}
-                      className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium transition ${
+                      className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                         active
                           ? "bg-green-700 text-white shadow-lg shadow-green-700/20"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:scale-[1.02] hover:shadow-sm"
                       }`}
                     >
                       <Icon size={18} />

@@ -119,14 +119,14 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
               <Link
                 key={a.id}
                 href={`/public/agenda/${a.id}`}
-                className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-green-300 hover:shadow-sm"
+                className="group rounded-3xl border border-slate-200 bg-white p-5 transition-all hover:-translate-y-1 hover:border-green-300 hover:shadow-xl"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm text-slate-500">
                       {format(a.date, "dd MMMM yyyy", { locale: id })}
                     </p>
-                    <p className="mt-2 text-lg font-semibold text-slate-900">
+                    <p className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-green-800">
                       {a.title}
                     </p>
                     <p className="mt-2 line-clamp-2 text-sm leading-7 text-slate-600">

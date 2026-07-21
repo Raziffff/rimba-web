@@ -107,7 +107,7 @@ export default function AgendaTable({ agendas }: AgendaTableProps) {
                 <div className="flex justify-end gap-2">
                   <Link
                     href={`/admin/agendaedit/${item.id}`}
-                    className="p-1.5 text-slate-400 hover:text-amber-600 transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-amber-600 transition-all duration-200 hover:scale-110 hover:bg-amber-50 rounded-xl"
                     title="Edit"
                   >
                     <Edit2 size={18} />
@@ -117,7 +117,7 @@ export default function AgendaTable({ agendas }: AgendaTableProps) {
                     <AlertDialogTrigger asChild>
                       <button
                         disabled={isDeleting === item.id}
-                        className="p-1.5 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                        className="p-1.5 text-slate-400 hover:text-red-600 transition-all duration-200 hover:scale-110 hover:bg-red-50 rounded-xl disabled:opacity-50"
                         title="Hapus"
                       >
                         {isDeleting === item.id ? (

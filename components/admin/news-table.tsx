@@ -93,14 +93,14 @@ export default function NewsTable({ news }: NewsTableProps) {
                   <Link
                     href={`/public/berita/${item.slug}`}
                     target="_blank"
-                    className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-blue-600 transition-all duration-200 hover:scale-110 hover:bg-blue-50 rounded-xl"
                     title="Lihat"
                   >
                     <Eye size={18} />
                   </Link>
                   <Link
                     href={`/admin/beritaedit/${item.id}`}
-                    className="p-1.5 text-slate-400 hover:text-amber-600 transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-amber-600 transition-all duration-200 hover:scale-110 hover:bg-amber-50 rounded-xl"
                     title="Edit"
                   >
                     <Edit2 size={18} />
@@ -110,7 +110,7 @@ export default function NewsTable({ news }: NewsTableProps) {
                     <AlertDialogTrigger asChild>
                       <button
                         disabled={isDeleting === item.id}
-                        className="p-1.5 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                        className="p-1.5 text-slate-400 hover:text-red-600 transition-all duration-200 hover:scale-110 hover:bg-red-50 rounded-xl disabled:opacity-50"
                         title="Hapus"
                       >
                         {isDeleting === item.id ? (

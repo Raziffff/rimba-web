@@ -27,19 +27,19 @@ export default function Footer() {
             Navigasi
           </h3>
           <div className="flex flex-col gap-3 text-sm text-slate-600">
-            <Link href="/" className="hover:text-green-700">
+            <Link href="/" className="transition hover:text-green-700 hover:pl-1">
               Beranda
             </Link>
-            <Link href="/public/tentang" className="hover:text-green-700">
+            <Link href="/public/tentang" className="transition hover:text-green-700 hover:pl-1">
               Tentang
             </Link>
-            <Link href="/public/berita" className="hover:text-green-700">
+            <Link href="/public/berita" className="transition hover:text-green-700 hover:pl-1">
               Berita
             </Link>
-            <Link href="/public/galeri" className="hover:text-green-700">
+            <Link href="/public/galeri" className="transition hover:text-green-700 hover:pl-1">
               Galeri
             </Link>
-            <Link href="/public/kontak" className="hover:text-green-700">
+            <Link href="/public/kontak" className="transition hover:text-green-700 hover:pl-1">
               Kontak
             </Link>
           </div>
