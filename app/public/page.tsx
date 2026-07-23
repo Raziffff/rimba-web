@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getAgendaHighlightLabel } from "@/lib/agenda-category";
 
 const featuredPrograms = [
   {
@@ -86,6 +87,7 @@ export default async function HomePage() {
         description: true,
         date: true,
         location: true,
+        category: true,
       },
     }),
   ]);
@@ -111,6 +113,7 @@ export default async function HomePage() {
       date: item.date,
       href: `/public/agenda/${item.id}`,
       location: item.location,
+      category: item.category,
     })),
   ].slice(0, 6);
 
@@ -138,7 +141,7 @@ export default async function HomePage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full px-8 py-7 text-base">
                 <Link href="/public/agenda">
-                  Lihat Agenda
+                  Daftar Lomba
                   <ArrowRight size={20} />
                 </Link>
               </Button>
@@ -249,7 +252,7 @@ export default async function HomePage() {
               Highlight
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Berita terbaru & agenda mendatang
+              Berita terbaru & pendaftaran lomba
             </h2>
             <p className="mt-4 max-w-2xl text-slate-600">
               Geser untuk melihat highlight. Konten berasal dari dashboard admin.
@@ -266,7 +269,7 @@ export default async function HomePage() {
               href="/public/agenda"
               className="inline-flex items-center justify-center rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800"
             >
-              Lihat Agenda
+              Pendaftaran Lomba
             </Link>
           </div>
         </div>
@@ -274,7 +277,7 @@ export default async function HomePage() {
         <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
           {highlights.length === 0 && (
             <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-              Belum ada berita atau agenda yang dipublish.
+              Belum ada berita atau lomba yang dipublikasikan.
             </div>
           )}
 
@@ -310,7 +313,11 @@ export default async function HomePage() {
                         : "bg-slate-100 text-slate-700"
                     }`}
                   >
-                    {item.kind === "news" ? "Berita" : "Agenda"}
+                    {item.kind === "news"
+                      ? "Berita"
+                      : getAgendaHighlightLabel(
+                          "category" in item ? item.category : null,
+                        )}
                   </span>
                   <span className="text-xs text-slate-500">
                     {format(item.date, "dd MMMM yyyy", { locale: id })}
@@ -439,10 +446,10 @@ export default async function HomePage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
               <CalendarDays size={22} />
             </div>
-            <h3 className="mt-5 text-xl font-semibold">Agenda Kegiatan</h3>
+            <h3 className="mt-5 text-xl font-semibold">Perlombaan Islami</h3>
             <p className="mt-3 text-sm leading-7 text-slate-300">
-              Jadwal kajian, pelatihan, dan kegiatan sosial akan ditampilkan
-              secara terstruktur.
+              Jadwal dan pendaftaran perlombaan islami seperti hafal Al-Quran ,
+              adzan, dan dai .
             </p>
           </div>
 

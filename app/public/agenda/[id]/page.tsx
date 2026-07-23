@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { ArrowLeft, CalendarDays, MapPin, Share2 } from "lucide-react";
 import AgendaRegistrationForm from "@/components/public/agenda-registration-form";
+import { isLombaCategory } from "@/lib/agenda-category";
 
 type AgendaDetailPageProps = {
   params: Promise<{
@@ -38,9 +39,15 @@ export default async function AgendaDetailPage({ params }: AgendaDetailPageProps
     notFound();
   }
 
-const registrationClosed =
-  agenda.registrationDeadline != null &&
-  agenda.registrationDeadline < new Date();
+  const siteSetting = await prisma.siteSetting.findFirst({
+    select: { phone: true },
+  });
+  const adminPhone = siteSetting?.phone ?? "";
+  const isLomba = isLombaCategory(agenda.category);
+
+  const registrationClosed =
+    agenda.registrationDeadline != null &&
+    agenda.registrationDeadline < new Date();
 
   const h = await headers();
   const host = h.get("host") ?? "";
@@ -57,7 +64,7 @@ const registrationClosed =
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-green-700"
         >
           <ArrowLeft size={18} />
-          Kembali
+          {isLomba ? "Kembali ke Daftar Lomba" : "Kembali ke Agenda"}
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -148,8 +155,10 @@ const registrationClosed =
             <AgendaRegistrationForm
               agendaId={agenda.id}
               agendaTitle={agenda.title}
+              category={agenda.category}
               disabled={agenda.status === "CANCELLED"}
               deadlineIso={agenda.registrationDeadline?.toISOString() ?? null}
+              adminPhone={adminPhone}
             />
           </div>
         </div>

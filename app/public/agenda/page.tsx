@@ -47,14 +47,14 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
       <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-700">
-            Agenda
+            Agenda & Lomba
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-            Agenda Kegiatan RIMBA
+            Agenda & Perlombaan RIMBA
           </h1>
           <p className="mt-4 max-w-2xl leading-8 text-slate-600">
-            Lihat jadwal kajian, pelatihan, dan kegiatan sosial. Klik tanggal di
-            kalender untuk melihat detail agenda.
+            Lihat jadwal kajian, kegiatan sosial, serta pendaftaran perlombaan islami remaja masjid.
+            Klik tanggal di kalender atau pilih agenda di bawah untuk mendaftar.
           </p>
         </div>
 
@@ -106,13 +106,13 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
       <div className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-2">
           <CalendarDays size={18} className="text-green-700" />
-          <h2 className="text-xl font-bold text-slate-900">Daftar Agenda</h2>
+          <h2 className="text-xl font-bold text-slate-900">Daftar Agenda & Lomba</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           {agendas.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-500 md:col-span-2">
-              Belum ada agenda yang tersedia.
+              Belum ada agenda atau perlombaan yang tersedia.
             </div>
           ) : (
             agendas.slice(0, 8).map((a) => (
