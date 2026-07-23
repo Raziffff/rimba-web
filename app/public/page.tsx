@@ -252,7 +252,7 @@ export default async function HomePage() {
               Highlight
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Berita terbaru & pendaftaran lomba
+              Berita & Agenda Terbaru
             </h2>
             <p className="mt-4 max-w-2xl text-slate-600">
               Geser untuk melihat highlight. Konten berasal dari dashboard admin.
